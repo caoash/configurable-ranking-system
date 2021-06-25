@@ -4,6 +4,7 @@ import Controls from "./Controls.js"
 import Table from "./Table.js"
 import {BrowserRouter, Route, Redirect} from 'react-router-dom'
 
+
 const App = () => {
   let objs = [];
   let head = [];
