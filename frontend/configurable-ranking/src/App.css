@@ -1,0 +1,20 @@
+.main-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+  flex-wrap: wrap;
+  align-items:center;
+  
+}
+
+.main-body {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  margin-top: 3rem;
+  margin-left: 6%;
+  margin-right: 6%;
+  margin-bottom: 80px;
+  width: 88%;
+}
