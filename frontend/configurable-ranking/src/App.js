@@ -3,6 +3,7 @@ import Header from "./Header.js"
 import Controls from "./Controls.js"
 import Table from "./Table.js"
 
+
 const App = () => {
   let objs = [];
   let head = [];
