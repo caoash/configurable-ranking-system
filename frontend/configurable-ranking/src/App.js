@@ -2,6 +2,7 @@ import './App.css';
 import Header from "./Header.js"
 import Controls from "./Controls.js"
 import Table from "./Table.js"
+import {BrowserRouter, Route, Redirect} from 'react-router-dom'
 
 const App = () => {
   let objs = [];
@@ -14,13 +15,26 @@ const App = () => {
   objs.push(["Random College 5", "Random Place 5", "N/A", "N/A", "N/A", "N/A", "N/A"]);
   objs.push(["Random College 6", "Random Place 6", "N/A", "N/A", "N/A", "N/A", "N/A"]);
   return (
-    <div class = "main-container">
-      <Header />
-      <div class = "main-body">
-        {/* <Controls /> */}
-        <Table hinfo = {head} info = {objs}/>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Route exact path = "/">
+        <Redirect to="/home"/>
+      </Route>
+      <Route path = "/home">
+        <div class = "main-container">
+          <Header />
+          <div class = "main-body">
+            {/* <Controls /> */}
+            <Table hinfo = {head} info = {objs}/>
+          </div>
+        </div>
+      </Route>
+      <Route path = "/about">
+        <div class = "main-container">
+          <Header />
+        </div>
+      </Route>
+    </BrowserRouter>
+    
   )
 }
 

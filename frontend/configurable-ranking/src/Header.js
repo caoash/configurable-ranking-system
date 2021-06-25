@@ -8,7 +8,7 @@ const Header = () => {
         <nav class = "bg-dark fixed-top">
             <div class = "container">
                 <LargeTextbox text = "Customizable Ranking System" />
-                <Textbox text = "Home" to_ref = "/"/>
+                <Textbox text = "Home" to_ref = "/home"/>
                 <Textbox text = "About" to_ref = "/about"/>
             </div>
         </nav>
