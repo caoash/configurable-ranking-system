@@ -26,11 +26,13 @@ const useInterval = (callback, delay) => {
 }
 
 const Header = () => {
-    const [status, setStatus] = useState("API Offline");
+    const [status, setStatus] = useState("");
     async function fetchData() {
       await axios.get(C.API + '/status').then(response => {
         if (response.data === "API Online") {
-          setStatus("API Online");
+          setStatus("API Online"); 
+        } else {
+          setStatus("API Offline");
         }
       }).catch(error => {
         console.log(error)
@@ -43,7 +45,7 @@ const Header = () => {
 
     useInterval(() => {
         fetchData();
-    }, 10000);
+    }, 5000);
     
     console.log(status);
     return (
