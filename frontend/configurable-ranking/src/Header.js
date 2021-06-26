@@ -3,18 +3,49 @@ import Textbox from "./Textbox.js"
 import LargeTextbox from "./LargeTextbox.js"
 import * as C from './Constants.js'
 import axios from "axios"
+import {useEffect, useRef, useState} from "react"
 
+const useInterval = (callback, delay) => {
+  const savedCallback = useRef();
+
+  // Remember the latest callback.
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
+  // Set up the interval.
+  useEffect(() => {
+    function tick() {
+      savedCallback.current();
+    }
+    if (delay !== null) {
+      let id = setInterval(tick, delay);
+      return () => clearInterval(id);
+    }
+  }, [delay]);
+}
 
 const Header = () => {
-    let status = "API Offline";
-    axios.get(C.API + '/status').then(response => {
-      if (response.data === "API Online") {
-        status = "API Online";
-        document.getElementById("api_status").text = status;
-      }
-    }).catch(error => {
-      console.log(error)
-    })
+    const [status, setStatus] = useState("API Offline");
+    async function fetchData() {
+      await axios.get(C.API + '/status').then(response => {
+        if (response.data === "API Online") {
+          setStatus("API Online");
+        }
+      }).catch(error => {
+        console.log(error)
+      })
+    }
+    
+    useEffect(() => {
+        fetchData();
+    });
+
+    useInterval(() => {
+        fetchData();
+    }, 10000);
+    
+    console.log(status);
     return (
         <nav class = "bg-dark fixed-top">
             <div class = "container">
