@@ -6,6 +6,7 @@ from flask_cors import CORS
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
+
     CORS(app)
     app.config.from_mapping(
         SECRET_KEY='test',
@@ -28,5 +29,8 @@ def create_app(test_config=None):
 
     from . import db
     db.init_app(app)
+
+    from . import api
+    app.register_blueprint(api.bp)
 
     return app
