@@ -1,4 +1,6 @@
 DROP TABLE IF EXISTS college;
+DROP table IF EXISTS college_meta;
+
 
 CREATE TABLE college (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -22,10 +22,11 @@ def get_sorted(table):
     db = get_db()
     if table_not_exists(db, table):
         return
-    criteria = request.args.keys()
     entries = (db.execute('SELECT * from {table_name}'.format(table_name=table))
                .fetchall())
-    entries.sort(reverse=True, key=lambda e: average_criteria(e, criteria))
+    criteria = request.args.keys()
+    if len(criteria) > 0:
+        entries.sort(reverse=True, key=lambda e: average_criteria(e, criteria))
     return jsonify(entries)
 
 
