@@ -26,12 +26,14 @@ def close_db(e=None):
     db = g.pop('db', None)
     if db is not None:
         db.close()
+    return 'CLOSED'
 
 
 def init_db():
     db = get_db()
     with current_app.open_resource('schema.sql') as f:
         db.executescript(f.read().decode('utf8'))
+    return 'DONE'
 
 
 @click.command('init-db')
@@ -39,8 +41,10 @@ def init_db():
 def init_db_command():
     init_db()
     click.echo('Initialized the database.')
+    return 'OK'
 
 
 def init_app(app):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
+    return 'DONE'

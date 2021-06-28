@@ -2,41 +2,76 @@ import './App.css';
 import Header from "./Header.js"
 import Controls from "./Controls.js"
 import Table from "./Table.js"
+import {useEffect, useState} from 'react';
 import {BrowserRouter, Route, Redirect} from 'react-router-dom'
-
+import axios from "axios"
+import * as C from './Constants.js'
 
 const App = () => {
+  const [fin, setFin] = useState(false);
+  const [res, setRes] = useState(null);
   let objs = [];
   let head = [];
-  head.push(["College", "Location", "Size", "Acceptance Rate", "Graduation Rate", "Average ACT Score", "Ranking"]);
-  objs.push(["Random College", "Random Place", "Large", "10%", "90%", "35", "3rd"]);
-  objs.push(["Random College 2", "Random Place 2", "Small", "99%", "10%", "24", "136th"]);
-  objs.push(["Random College 3", "Random Place 3", "N/A", "N/A", "N/A", "N/A", "N/A"]);
-  objs.push(["Random College 4", "Random Place 4", "N/A", "N/A", "N/A", "N/A", "N/A"]);
-  objs.push(["Random College 5", "Random Place 5", "N/A", "N/A", "N/A", "N/A", "N/A"]);
-  objs.push(["Random College 6", "Random Place 6", "N/A", "N/A", "N/A", "N/A", "N/A"]);
-  return (
-    <BrowserRouter>
-      <Route exact path = "/">
-        <Redirect to="/home"/>
-      </Route>
-      <Route path = "/home">
-        <div class = "main-container">
-          <Header />
-          <div class = "main-body">
-            {/* <Controls /> */}
-            <Table hinfo = {head} info = {objs}/>
+  
+  useEffect(() => {
+    if (!fin) {
+      fetchData();
+    }
+  });
+
+  async function fetchData() {
+    await axios.get(C.API + '/college/sorted?admissionRate').then(async response => {
+      console.log(response);
+      await setRes(response.data);
+      await setFin(true);
+    }).catch(error => {
+      console.log(error)
+    })
+  }
+  if (fin) {
+    let params = [];
+    console.log(res[0]);
+    for (let k in res[0]) {
+      console.log("key: " + k);
+      params.push(k);
+    }
+    console.log(params);
+    head.push(params);
+    for (let i = 0; i < res.length; i++) {
+      let cur = [];
+      for (let j in res[i]) {
+        cur.push(res[i][j]);
+      }
+      objs.push(cur);
+    }
+    return (
+      <BrowserRouter>
+        <Route exact path = "/">
+          <Redirect to="/home"/>
+        </Route>
+        <Route path = "/home">
+          <div className = "main-container">
+            <Header />
+            <div className = "main-body">
+              <Controls />
+              <Table hinfo = {head} info = {objs}/>
+            </div>
           </div>
-        </div>
-      </Route>
-      <Route path = "/about">
-        <div class = "main-container">
-          <Header />
-        </div>
-      </Route>
-    </BrowserRouter>
-    
-  )
+        </Route>
+        <Route path = "/about">
+          <div className = "main-container">
+            <Header />
+          </div>
+        </Route>
+      </BrowserRouter>
+      
+    )
+  } else {
+    return (
+      <>
+      </>
+    )
+  }
 }
 
 export default App;

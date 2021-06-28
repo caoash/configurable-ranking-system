@@ -49,8 +49,8 @@ const Header = () => {
     
     console.log(status);
     return (
-        <nav class = "bg-dark fixed-top">
-            <div class = "container">
+        <nav className = "bg-dark fixed-top">
+            <div className = "container">
                 <LargeTextbox text = "Customizable Ranking System" />
                 <Textbox text = "Home" to_ref = "/home"/>
                 <Textbox text = "About" to_ref = "/about"/>
