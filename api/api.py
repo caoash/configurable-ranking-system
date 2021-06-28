@@ -2,10 +2,9 @@ import numbers
 
 from flask import Blueprint, request, jsonify
 
-from api.db import get_db
+from db import get_db
 
 bp = Blueprint('auth', __name__, url_prefix='/api')
-
 
 @bp.route('/<string:table>/<int:entry_id>')
 def get_entry(table, entry_id):

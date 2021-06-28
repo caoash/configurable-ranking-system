@@ -2,7 +2,7 @@ import "./LargeTextbox.css"
 
 const LargeTextbox = (props) => {
     return (
-        <p class = "large-text-format">
+        <p className = "large-text-format">
             {props.text}
         </p>     
     )

@@ -14,9 +14,11 @@ const Table = (props) => {
         rows.push(<Row stats = {cur} />);
     }
     return (
-        <table class="table table-bordered">
+        <table className = "table table-bordered">
             <thead>
-                {tbhead}
+                <tr>
+                    {tbhead}
+                </tr>
             </thead>
             <tbody>
                 {rows}

@@ -1,6 +1,10 @@
+import './Controls.css'
+
 const Controls = () => {
     return (
-        <h1> Controls Go Here </h1>
+        <div className = "move">
+            <h1> Controls Go Here </h1>
+        </div>
     )
 }
 
