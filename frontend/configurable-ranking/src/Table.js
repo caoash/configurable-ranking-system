@@ -8,6 +8,7 @@ const Table = () => {
     const [sortBy, setSortBy] = useState('admissionRate');
     const [fin, setFin] = useState(false);
     const [res, setRes] = useState(null);
+    const [init, setInit] = useState(false);
     const [nr, setNr] = useState(-1);
     const [nc, setNc] = useState(-1);
     let objs = [];
@@ -25,11 +26,12 @@ const Table = () => {
             // console.log(response);
             await setRes(response.data);
             await setFin(true);
+            await setInit(true);
         }).catch(error => {
             console.log(error)
         })
     }
-    if (fin) {
+    if (init) { 
         let params = [];
         for (let k in res[0]) {
             params.push(k);
@@ -72,55 +74,12 @@ const Table = () => {
                     {rows}
                 </tbody>
             </table>
-        );
+        ); 
     } else {
-        console.log(nr + " " + nc);
-        if (nr !== -1 && nc !== -1) {
-            let params = [];
-            for (let k in res[0]) {
-                params.push(k);
-            }
-            console.log(params);
-            head.push(params);
-            for (let i = 0; i < res.length; i++) {
-                let cur = [];
-                for (let j in res[i]) {
-                    cur.push(res[i][j]);
-                }
-                objs.push(cur);
-            }
-            let hinfo = head;
-            let info = objs;
-            let tbhead = [];
-            for (let i = 0; i < hinfo[0].length; i++) {
-                tbhead.push(<th> <button onClick = {() => {
-                    setSortBy(hinfo[0][i]);
-                    setFin(false);
-                }}> {hinfo[0][i]} </button></th>);
-            }
-            let rows = [];
-            for (let i = 0; i < info.length; i++) {
-                let cur = info[i];
-                rows.push(<Row stats = {cur} />);
-            }
-            return (
-                <table className = "table table-bordered">
-                    <thead>
-                        <tr>
-                            {tbhead}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows}
-                    </tbody>
-                </table>
-            );
-        } else {
-            return (
-                <>
-                </>
-            );
-        }
+        return (
+            <>
+            </>
+        );
     }
 }
 
