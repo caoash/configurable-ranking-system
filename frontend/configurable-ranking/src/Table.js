@@ -36,6 +36,7 @@ const Table = () => {
         for (let k in res[0]) {
             params.push(k);
         }
+        params.reverse();
         console.log(params);
         head.push(params);
         for (let i = 0; i < res.length; i++) {
@@ -43,6 +44,7 @@ const Table = () => {
             for (let j in res[i]) {
                 cur.push(res[i][j]);
             }
+            cur.reverse();
             objs.push(cur);
         }
         let hinfo = head;
