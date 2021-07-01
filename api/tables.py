@@ -42,6 +42,7 @@ CREATE TABLE {TABLE_LIST} (
 CREATE_DATA_TABLE_INFO = f'''
 CREATE TABLE {{table_name}} (
     {ID_DEFINITION},
+    name TEXT,
     description TEXT
 )
 '''
@@ -170,6 +171,7 @@ def exists(table):
 @bp.route('/create', methods=('POST',))
 def create_table():
     table = request.headers['tableName']
+    view_name = request.headers.get('viewName')
     description = request.headers.get('tableDescription')
     if data_table_exists(table):
         raise Exception(TABLE_EXISTS)
@@ -178,7 +180,7 @@ def create_table():
         db.execute(f'INSERT INTO {TABLE_LIST} (name) VALUES (?)', (table,))
         table_id = get_table_id(table)
         db.execute(CREATE_DATA_TABLE_INFO.format(table_name=INFO + table_id))
-        db.execute(f'INSERT INTO {INFO + table_id} (description) VALUES (?)', (description,))
+        db.execute(f'INSERT INTO {INFO + table_id} (name, description) VALUES (?, ?)', (view_name, description))
         db.execute(CREATE_DATA_TABLE_ENTRIES.format(table_name=ENTRIES + table_id))
         db.execute(CREATE_DATA_TABLE_FIELDS.format(table_name=FIELDS + table_id))
         db.commit()
@@ -188,9 +190,12 @@ def create_table():
 @bp.route('/<string:table>/edit', methods=('PUT',))
 def update_table_info(table):
     description = request.headers.get('newDescription')
+    view_name = request.headers.get('newViewName')
     db = get_db()
-    db.execute(f'UPDATE {INFO + get_table_id(table)} SET description=?', (description,)
-               )
+    if description is not None:
+        db.execute(f'UPDATE {INFO + get_table_id(table)} SET description=?', (description,))
+    if view_name is not None:
+        db.execute(f'UPDATE {INFO + get_table_id(table)} SET name=?', (view_name,))
     db.commit()
     return table + ' edited'
 
