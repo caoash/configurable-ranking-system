@@ -21,8 +21,8 @@ const Table = () => {
         }
     });
     async function fetchData() {
-        console.log("QUERYING: " + C.API + '/college/sorted?' + sortBy);
-        await axios.get(C.API + '/college/sorted?' + sortBy).then(async response => {
+        console.log("QUERYING: " + C.API + '/college/entries?sort=' + sortBy);
+        await axios.get(C.API + '/college/entries?sort=' + sortBy).then(async response => {
             // console.log(response);
             await setRes(response.data);
             await setFin(true);
