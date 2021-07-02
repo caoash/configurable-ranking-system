@@ -142,11 +142,11 @@ def delete_entry(table, entry_id):
 def get_sorted(table):
     db = get_db()
     table_id = get_table_id(table)
-    criteria = request.args.get('sort').split(',')
     entries = db.execute(f'SELECT * FROM {ENTRIES + table_id}').fetchall()
     for field in db.execute(f'SELECT * FROM {FIELDS + table_id}').fetchall():
         for i in range(len(entries)):
             entries[i][field['name']] = entries[i].pop(FIELD + str(field['id']))
+    criteria = request.args.get('sort').split(',')
     if criteria is not None:
         entries.sort(reverse=True, key=lambda e: average_criteria(e, criteria))
     return jsonify(entries)
