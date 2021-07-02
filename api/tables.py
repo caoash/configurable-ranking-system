@@ -143,12 +143,26 @@ def get_sorted(table):
     db = get_db()
     table_id = get_table_id(table)
     entries = db.execute(f'SELECT * FROM {ENTRIES + table_id}').fetchall()
-    for field in db.execute(f'SELECT * FROM {FIELDS + table_id}').fetchall():
+    table_fields = db.execute(f'SELECT * FROM {FIELDS + table_id}').fetchall()
+    for field in table_fields:
         for i in range(len(entries)):
             entries[i][field['name']] = entries[i].pop(FIELD + str(field['id']))
-    criteria = request.args.get('sort').split(',')
+    criteria = request.args.get('sort')
     if criteria is not None:
-        entries.sort(reverse=True, key=lambda e: average_criteria(e, criteria))
+        max_entries = {}
+        min_entries = {}
+        field_info = {}
+        for field in table_fields:
+            field_info[field['name']] = field
+            max_entries[field['name']] = list(db.execute(
+                f'SELECT MAX({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}').fetchone().values())[0]
+            min_entries[field['name']] = list(db.execute(
+                f'SELECT MIN({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}').fetchone().values())[0]
+        entries.sort(reverse=True, key=lambda e: average_criteria(
+            e, criteria.split(','),
+            field_info,
+            max_entries, min_entries)
+         )
     return jsonify(entries)
 
 
@@ -285,12 +299,12 @@ def delete_field(table, field):
     return 'Field deleted'
 
 
-def average_criteria(e, criteria):
+def average_criteria(e, criteria, field_info, max_entries, min_entries):
     total = 0
     for key, value in e.items():
-        if isinstance(value, numbers.Number) and (key in criteria):
-            total += value
-    return total / len(criteria)
+        if key != 'id' and bool(field_info[key]['isData']) and (key in criteria):
+            total += (value - min_entries[key]) / (max_entries[key] - min_entries[key])
+    return total
 
 
 def data_table_exists(table):
