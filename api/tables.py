@@ -82,8 +82,8 @@ def add_entry(table):
     entry_fields = json.loads(request.headers['entryFields'])  # dict of fields for entry
     db = get_db()
     table_id = get_table_id(table)
-    table_fields = sorted(db.execute(f'SELECT name, isData FROM {FIELDS + table_id}').fetchall(),
-                          key=lambda e: e['name'])
+    table_fields = sorted(db.execute(f'SELECT * FROM {FIELDS + table_id}').fetchall(),
+                          key=lambda e: e['id'])
     if not len(table_fields):
         raise Exception('Must add a field before adding entries')
     fields_tuple = ()
@@ -98,7 +98,7 @@ def add_entry(table):
             fields_tuple += (data,)
     db.execute('INSERT INTO {entry_table} ({field_names}) VALUES ({question_marks})'.format(
         entry_table=ENTRIES + table_id,
-        field_names=str.join(', ', get_all_field_id(table)),
+        field_names=str.join(', ', [FIELD + str(e['id']) for e in table_fields]),
         question_marks=('?, ' * len(fields_tuple))[:-2]
     ), fields_tuple)
     db.commit()
@@ -339,10 +339,6 @@ def get_field_id(table, field_name):
         raise Exception(FIELD_DOESNT_EXIST)
     else:
         return FIELD + str(result['id'])
-
-
-def get_all_field_id(table):
-    return sorted([FIELD + str(e['id']) for e in get_db().execute(f'SELECT id FROM {FIELDS + get_table_id(table)}')])
 
 
 def get_table_id(table):
