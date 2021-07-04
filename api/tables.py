@@ -82,8 +82,7 @@ def add_entry(table):
     entry_fields = json.loads(request.headers['entryFields'])  # dict of fields for entry
     db = get_db()
     table_id = get_table_id(table)
-    table_fields = sorted(db.execute(f'SELECT * FROM {FIELDS + table_id}').fetchall(),
-                          key=lambda e: e['id'])
+    table_fields = db.execute(f'SELECT * FROM {FIELDS + table_id}').fetchall()
     if not len(table_fields):
         raise Exception('Must add a field before adding entries')
     fields_tuple = ()
