@@ -140,6 +140,8 @@ def delete_entry(table, entry_id):
 
 @bp.route('/<string:table>/entries')
 def get_sorted(table):
+    criteria = request.args.get('sort')
+    weights = request.args.get('columnWeights')
     db = get_db()
     table_id = get_table_id(table)
     entries = db.execute(f'SELECT * FROM {ENTRIES + table_id}').fetchall()
@@ -147,7 +149,6 @@ def get_sorted(table):
     for field in table_fields:
         for i in range(len(entries)):
             entries[i][field['name']] = entries[i].pop(FIELD + str(field['id']))
-    criteria = request.args.get('sort')
     if criteria is not None:
         max_entries = {}
         min_entries = {}
@@ -158,8 +159,16 @@ def get_sorted(table):
                 f'SELECT MAX({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}').fetchone().values())[0]
             min_entries[field['name']] = list(db.execute(
                 f'SELECT MIN({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}').fetchone().values())[0]
+        weights_list = []
+        criteria_list = criteria.split(',')
+        if weights is None:
+            weights_list = [1] * len(criteria_list)
+        else:
+            weights_list = [float(w) for w in weights.split(',')]
+        if len(weights_list) != len(criteria_list):
+            raise Exception('List of weights needs to be equal in length to list of selected criteria')
         entries.sort(reverse=True, key=lambda e: average_criteria(
-            e, criteria.split(','),
+            e, criteria_list, weights_list,
             field_info,
             max_entries, min_entries)
          )
@@ -299,11 +308,20 @@ def delete_field(table, field):
     return 'Field deleted'
 
 
-def average_criteria(e, criteria, field_info, max_entries, min_entries):
+def average_criteria(e, criteria, weights, field_info, max_entries, min_entries):
     total = 0
     for key, value in e.items():
-        if key != 'id' and bool(field_info[key]['isData']) and (key in criteria):
-            total += (value - min_entries[key]) / (max_entries[key] - min_entries[key])
+        try:
+            index = criteria.index(key)
+            if key != 'id' and bool(field_info[key]['isData']):
+                if value is not None:
+                    total += weights[index] * (value - min_entries[key]) / (max_entries[key] - min_entries[key])
+                else:
+                    if weights[index] < 0:
+                        total -= weights[index]
+                    total -= 0.0001  # to differentiate between the lowest value
+        except ValueError:
+            pass
     return total
 
 
