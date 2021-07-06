@@ -69,6 +69,8 @@ VALUES
     (?, ?, ?)
 '''
 
+PAGE_SIZE = 25
+
 
 @bp.route('/<string:table>/<int:entry_id>')
 def get_entry(table, entry_id):
@@ -142,6 +144,9 @@ def delete_entry(table, entry_id):
 def get_sorted(table):
     criteria = request.args.get('sort')
     weights = request.args.get('columnWeights')
+    page = request.args.get('page')  # page starts at 1
+    if page is None:
+        page = 1
     db = get_db()
     table_id = get_table_id(table)
     entries = db.execute(f'SELECT * FROM {ENTRIES + table_id}').fetchall()
@@ -164,7 +169,7 @@ def get_sorted(table):
         if weights is None:
             weights_list = [1] * len(criteria_list)
         else:
-            weights_list = [float(w) for w in weights.split(',')]
+            weights_list = [float(w) if w != 'NaN' else 0 for w in weights.split(',')]
         if len(weights_list) != len(criteria_list):
             raise Exception('List of weights needs to be equal in length to list of selected criteria')
         entries.sort(reverse=True, key=lambda e: average_criteria(
@@ -172,7 +177,11 @@ def get_sorted(table):
             field_info,
             max_entries, min_entries)
          )
-    return jsonify(entries)
+    start = PAGE_SIZE * (int(page) - 1)
+    if start >= len(entries):
+        return jsonify([])
+    end = min(len(entries), start + 25)
+    return jsonify(entries[start:end])
 
 
 @bp.route('/<string:table>/info')
@@ -318,7 +327,7 @@ def average_criteria(e, criteria, weights, field_info, max_entries, min_entries)
                     total += weights[index] * (value - min_entries[key]) / (max_entries[key] - min_entries[key])
                 else:
                     if weights[index] < 0:
-                        total -= weights[index]
+                        total += weights[index]
                     total -= 0.0001  # to differentiate between the lowest value
         except ValueError:
             pass
