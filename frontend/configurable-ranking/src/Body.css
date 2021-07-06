@@ -1,0 +1,23 @@
+.move {
+    display: flex;
+    flex-direction: column;
+    margin-top: 50px;   
+    width: 100%;
+}
+
+.horiz {
+    width: 80%;
+    /* width: 200%; */
+    text-align: center;
+    display: flex;
+    flex-direction: row;
+    padding: 5px;
+    margin-left: auto;
+    justify-content: center;
+    margin-right: auto;
+    justify-content: space-around;
+}
+
+.btn {
+    width: 10%;
+}

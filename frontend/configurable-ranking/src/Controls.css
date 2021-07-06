@@ -1,5 +1,15 @@
 .move {
-    width: 100%;
+    width: 50%;
     text-align: center;
     margin-top: 50px;
+    display: flex;
+    flex-direction: row;
+    padding: 5px;
+    margin-left: auto;
+    margin-right: auto;
+    justify-content: space-between;
+}
+
+.btn {
+    width: 10%;
 }

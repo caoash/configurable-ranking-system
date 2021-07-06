@@ -1,8 +1,7 @@
 import './App.css';
 import Header from "./Header.js"
-import Controls from "./Controls.js"
-import Table from "./Table.js"
 import {BrowserRouter, Route, Redirect} from 'react-router-dom'
+import Body from "./Body.js"
 
 const App = () => {
   return (
@@ -13,10 +12,7 @@ const App = () => {
       <Route path = "/home">
         <div className = "main-container">
           <Header />
-          <div className = "main-body">
-            <Controls />
-            <Table />
-          </div>
+          <Body />
         </div>
       </Route>
       <Route path = "/about">
