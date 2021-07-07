@@ -11,13 +11,41 @@
     text-align: center;
     display: flex;
     flex-direction: row;
-    padding: 5px;
+    /* padding: 5px; */
     margin-left: auto;
     justify-content: center;
     margin-right: auto;
-    justify-content: space-around;
+    justify-content: space-between;
+    height: 50%;
+}
+
+.sep {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.cent {
+    text-align: center;
 }
 
 .btn {
-    width: 10%;
+    width: 15%;
+}
+
+.field {
+    width: 15%;
+}
+
+.sel {
+    width: 3%;
+    height: 2%;
+}
+
+.lab {
+    margin-right: 0;
+}
+
+.form {
+    width: 4%;
 }

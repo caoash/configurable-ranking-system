@@ -14,7 +14,7 @@ const Table = (props) => {
     const [nc, setNc] = useState(-1);
     const [np, setNp] = useState(-1);
     const [gParams, setgParams] = useState(null);
-    
+
     // console.log(sortBy);
     // console.log(fin);
     useEffect(() => {
@@ -22,10 +22,8 @@ const Table = (props) => {
     }, [props.arr]);
 
     useEffect(() => {
-        if (!init) {
-            fetchData();
-        }
-    }, [])
+        if (!done) fetchData();
+    }, []);
     useEffect(() => {
         if (sortWeights === null || gParams === null) return;
         const fetchSortedData = (async () => {
@@ -33,12 +31,13 @@ const Table = (props) => {
             for (let i = 0; i < gParams.length; i++) {
                 qryString += gParams[i];
                 if (i !== gParams.length - 1) qryString += ",";
-            }
+            }   
             qryString += "&columnWeights=";
             for (let i = 0; i < sortWeights.length; i++) {
                 qryString += sortWeights[i];
                 if (i !== sortWeights.length - 1) qryString += ",";
             }
+            qryString += ("&page=" + props.page);
             await axios.get(qryString).then(async response => {
                 let get = response.data;
                 await setRes(get);
@@ -49,9 +48,10 @@ const Table = (props) => {
             })
         })
         fetchSortedData();
-    }, [sortWeights]);
+    }, [sortWeights, props.page]);
     async function fetchData() {
-        await axios.get(C.API + '/college/entries').then(async response => {
+        console.log(C.API + '/college/entries?page='+ props.page);
+        await axios.get(C.API + '/college/entries?page='+props.page).then(async response => {
             let get = response.data;
             // console.log(get);
             setNp(Object.keys(get[0]).length - 1);
@@ -100,6 +100,7 @@ const Table = (props) => {
                 }
                 setSortWeights(wgts);
                 setFin(false);
+                props.resetF();
             }} key = {i}> {hinfo[i]} </button></th>);
         }
         let rows = [];
