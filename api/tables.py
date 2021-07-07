@@ -1,5 +1,5 @@
 import json
-import numbers
+import math
 
 from flask import Blueprint, request, jsonify
 
@@ -141,7 +141,7 @@ def delete_entry(table, entry_id):
 
 
 @bp.route('/<string:table>/entries')
-def get_sorted(table):
+def get_entries(table):
     criteria = request.args.get('sort')
     weights = request.args.get('columnWeights')
     page = request.args.get('page')  # page starts at 1
@@ -160,10 +160,10 @@ def get_sorted(table):
         field_info = {}
         for field in table_fields:
             field_info[field['name']] = field
-            max_entries[field['name']] = list(db.execute(
-                f'SELECT MAX({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}').fetchone().values())[0]
-            min_entries[field['name']] = list(db.execute(
-                f'SELECT MIN({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}').fetchone().values())[0]
+            max_entries[field['name']] = get_single_result(
+                db.execute(f'SELECT MAX({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}'))
+            min_entries[field['name']] = get_single_result(
+                db.execute(f'SELECT MIN({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}'))
         weights_list = []
         criteria_list = criteria.split(',')
         if weights is None:
@@ -182,6 +182,17 @@ def get_sorted(table):
         return jsonify([])
     end = min(len(entries), start + 25)
     return jsonify(entries[start:end])
+
+
+@bp.route('/<string:table>/entry-count')
+def entry_count(table):
+    return jsonify(get_single_result(get_db().execute(f'SELECT COUNT(*) FROM {ENTRIES + get_table_id(table)}')))
+
+
+@bp.route('/<string:table>/page-count')
+def page_count(table):
+    return jsonify(math.ceil(
+        get_single_result(get_db().execute(f'SELECT COUNT(*) FROM {ENTRIES + get_table_id(table)}')) / PAGE_SIZE))
 
 
 @bp.route('/<string:table>/info')
@@ -374,3 +385,7 @@ def get_table_id(table):
         raise Exception(TABLE_DOESNT_EXIST)
     else:
         return str(result['id'])
+
+
+def get_single_result(cursor):
+    return list(cursor.fetchone().values())[0]
