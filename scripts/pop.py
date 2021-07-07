@@ -4,13 +4,12 @@ import json
 
 params = ["ADM_RATE", "SAT_AVG", "INSTNM", "STABBR", "INSTURL"]
 names = ["Admission Rate", "Average SAT", "Name", "State", "Website"]
-is_data = ["true", "true","false", "false", "false"]
-
-for i in range(100, 151): 
-    req.delete("http://localhost:5000/api/table/college/"+str(i)+"/delete")
+is_data = ["true", "true", "false", "false", "false"]
 
 dat = pd.read_csv("Most-Recent-Cohorts-All-Data-Elements.csv")
 
+nv_list = []
+temp = []
 for [ind, val] in dat.iterrows():
     nv = {}
     # print(val)
@@ -20,6 +19,14 @@ for [ind, val] in dat.iterrows():
         else:
             nv[names[i]] = val[params[i]]
     # print(nv)
+    temp.append(nv)
+    if len(temp) == 100:
+        nv_list.append(list(temp))
+        temp.clear()
+if not len(temp) == 0:
+    nv_list.append(temp)
+    temp.clear()
+for nv in nv_list:
     res = json.dumps(nv)
-    payload = {"entryFields" : res}
-    req.post("http://localhost:5000/api/table/college/add-entry", headers = payload)
+    payload = {"entryFields": res}
+    req.post("http://localhost:5000/api/table/college/add-entry", headers=payload)

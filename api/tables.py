@@ -70,6 +70,7 @@ VALUES
 '''
 
 PAGE_SIZE = 25
+MAX_ADDED_ENTRIES = 25
 
 
 @bp.route('/<string:table>/<int:entry_id>')
@@ -79,29 +80,33 @@ def get_entry(table, entry_id):
             .fetchone())
 
 
-@bp.route('/<string:table>/add-entry', methods=('POST',))
-def add_entry(table):
-    entry_fields = json.loads(request.headers['entryFields'])  # dict of fields for entry
+@bp.route('/<string:table>/add-entries', methods=('POST',))
+def add_entries(table):
+    entry_fields_list = json.loads(request.headers['entryFields'])  # dict of fields for entry
+    if len(entry_fields_list) > MAX_ADDED_ENTRIES:
+        raise Exception(f'Can\'t add more than {MAX_ADDED_ENTRIES} entries')
     db = get_db()
-    table_id = get_table_id(table)
-    table_fields = db.execute(f'SELECT * FROM {FIELDS + table_id}').fetchall()
-    if not len(table_fields):
-        raise Exception('Must add a field before adding entries')
-    fields_tuple = ()
-    for field in table_fields:
-        data = entry_fields[field['name']]
-        if field['isData']:
-            try:
-                fields_tuple += (float(data),)
-            except ValueError:
-                raise Exception('Could not convert string to numeric')
-        else:
-            fields_tuple += (data,)
-    db.execute('INSERT INTO {entry_table} ({field_names}) VALUES ({question_marks})'.format(
-        entry_table=ENTRIES + table_id,
-        field_names=str.join(', ', [FIELD + str(e['id']) for e in table_fields]),
-        question_marks=('?, ' * len(fields_tuple))[:-2]
-    ), fields_tuple)
+    for entry_fields in entry_fields_list:
+        table_id = get_table_id(table)
+        table_fields = db.execute(f'SELECT * FROM {FIELDS + table_id}').fetchall()
+        if not len(table_fields):
+            raise Exception('Must add a field before adding entries')
+        fields_tuple = ()
+        for field in table_fields:
+            data = entry_fields[field['name']]
+            if field['isData']:
+                try:
+                    fields_tuple += (float(data),)
+                except ValueError:
+                    raise Exception('Could not convert string to numeric')
+            else:
+                fields_tuple += (data,)
+        db.execute('INSERT INTO {entry_table} ({field_names}) VALUES ({question_marks})'.format(
+            entry_table=ENTRIES + table_id,
+            field_names=str.join(', ', [FIELD + str(e['id']) for e in table_fields]),
+            question_marks=('?, ' * len(fields_tuple))[:-2]
+        ), fields_tuple)
+        print('t')
     db.commit()
     return 'Entry added'
 
