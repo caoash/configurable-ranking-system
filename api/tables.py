@@ -1,5 +1,5 @@
 import json
-import numbers
+import math
 
 from flask import Blueprint, request, jsonify
 
@@ -69,6 +69,9 @@ VALUES
     (?, ?, ?)
 '''
 
+PAGE_SIZE = 25
+MAX_ADDED_ENTRIES = 25
+
 
 @bp.route('/<string:table>/<int:entry_id>')
 def get_entry(table, entry_id):
@@ -77,29 +80,33 @@ def get_entry(table, entry_id):
             .fetchone())
 
 
-@bp.route('/<string:table>/add-entry', methods=('POST',))
-def add_entry(table):
-    entry_fields = json.loads(request.headers['entryFields'])  # dict of fields for entry
+@bp.route('/<string:table>/add-entries', methods=('POST',))
+def add_entries(table):
+    entry_fields_list = json.loads(request.headers['entryFields'])  # dict of fields for entry
+    if len(entry_fields_list) > MAX_ADDED_ENTRIES:
+        raise Exception(f'Can\'t add more than {MAX_ADDED_ENTRIES} entries')
     db = get_db()
-    table_id = get_table_id(table)
-    table_fields = db.execute(f'SELECT * FROM {FIELDS + table_id}').fetchall()
-    if not len(table_fields):
-        raise Exception('Must add a field before adding entries')
-    fields_tuple = ()
-    for field in table_fields:
-        data = entry_fields[field['name']]
-        if field['isData']:
-            try:
-                fields_tuple += (float(data),)
-            except ValueError:
-                raise Exception('Could not convert string to numeric')
-        else:
-            fields_tuple += (data,)
-    db.execute('INSERT INTO {entry_table} ({field_names}) VALUES ({question_marks})'.format(
-        entry_table=ENTRIES + table_id,
-        field_names=str.join(', ', [FIELD + str(e['id']) for e in table_fields]),
-        question_marks=('?, ' * len(fields_tuple))[:-2]
-    ), fields_tuple)
+    for entry_fields in entry_fields_list:
+        table_id = get_table_id(table)
+        table_fields = db.execute(f'SELECT * FROM {FIELDS + table_id}').fetchall()
+        if not len(table_fields):
+            raise Exception('Must add a field before adding entries')
+        fields_tuple = ()
+        for field in table_fields:
+            data = entry_fields[field['name']]
+            if field['isData']:
+                try:
+                    fields_tuple += (float(data),)
+                except ValueError:
+                    raise Exception('Could not convert string to numeric')
+            else:
+                fields_tuple += (data,)
+        db.execute('INSERT INTO {entry_table} ({field_names}) VALUES ({question_marks})'.format(
+            entry_table=ENTRIES + table_id,
+            field_names=str.join(', ', [FIELD + str(e['id']) for e in table_fields]),
+            question_marks=('?, ' * len(fields_tuple))[:-2]
+        ), fields_tuple)
+        print('t')
     db.commit()
     return 'Entry added'
 
@@ -139,9 +146,12 @@ def delete_entry(table, entry_id):
 
 
 @bp.route('/<string:table>/entries')
-def get_sorted(table):
+def get_entries(table):
     criteria = request.args.get('sort')
     weights = request.args.get('columnWeights')
+    page = request.args.get('page')  # page starts at 1
+    if page is None:
+        page = 1
     db = get_db()
     table_id = get_table_id(table)
     entries = db.execute(f'SELECT * FROM {ENTRIES + table_id}').fetchall()
@@ -155,16 +165,16 @@ def get_sorted(table):
         field_info = {}
         for field in table_fields:
             field_info[field['name']] = field
-            max_entries[field['name']] = list(db.execute(
-                f'SELECT MAX({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}').fetchone().values())[0]
-            min_entries[field['name']] = list(db.execute(
-                f'SELECT MIN({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}').fetchone().values())[0]
+            max_entries[field['name']] = get_single_result(
+                db.execute(f'SELECT MAX({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}'))
+            min_entries[field['name']] = get_single_result(
+                db.execute(f'SELECT MIN({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}'))
         weights_list = []
         criteria_list = criteria.split(',')
         if weights is None:
             weights_list = [1] * len(criteria_list)
         else:
-            weights_list = [float(w) for w in weights.split(',')]
+            weights_list = [float(w) if w != 'NaN' else 0 for w in weights.split(',')]
         if len(weights_list) != len(criteria_list):
             raise Exception('List of weights needs to be equal in length to list of selected criteria')
         entries.sort(reverse=True, key=lambda e: average_criteria(
@@ -172,7 +182,22 @@ def get_sorted(table):
             field_info,
             max_entries, min_entries)
          )
-    return jsonify(entries)
+    start = PAGE_SIZE * (int(page) - 1)
+    if start >= len(entries):
+        return jsonify([])
+    end = min(len(entries), start + 25)
+    return jsonify(entries[start:end])
+
+
+@bp.route('/<string:table>/entry-count')
+def entry_count(table):
+    return jsonify(get_single_result(get_db().execute(f'SELECT COUNT(*) FROM {ENTRIES + get_table_id(table)}')))
+
+
+@bp.route('/<string:table>/page-count')
+def page_count(table):
+    return jsonify(math.ceil(
+        get_single_result(get_db().execute(f'SELECT COUNT(*) FROM {ENTRIES + get_table_id(table)}')) / PAGE_SIZE))
 
 
 @bp.route('/<string:table>/info')
@@ -318,7 +343,7 @@ def average_criteria(e, criteria, weights, field_info, max_entries, min_entries)
                     total += weights[index] * (value - min_entries[key]) / (max_entries[key] - min_entries[key])
                 else:
                     if weights[index] < 0:
-                        total -= weights[index]
+                        total += weights[index]
                     total -= 0.0001  # to differentiate between the lowest value
         except ValueError:
             pass
@@ -365,3 +390,7 @@ def get_table_id(table):
         raise Exception(TABLE_DOESNT_EXIST)
     else:
         return str(result['id'])
+
+
+def get_single_result(cursor):
+    return list(cursor.fetchone().values())[0]
