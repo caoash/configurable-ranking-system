@@ -61,7 +61,7 @@ const Body = () => {
             let val = await cur.current.value;
             // console.log(val);
             if (isNaN(val)) return;
-            newWeights[i] = parseInt(val);
+            newWeights[i] = parseFloat(val);
         }
         setCurPage(1);
         setWeights(newWeights);
