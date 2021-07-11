@@ -58,15 +58,16 @@ CREATE TABLE {{table_name}} (
     {ID_DEFINITION},
     name TEXT NOT NULL UNIQUE,
     description TEXT,
-    isData INTEGER
+    isData INTEGER,
+    isAscending INTEGER
 )
 '''
 
 INSERT_FIELD = '''
 INSERT INTO {field_table} 
-    (name, description, isData)
+    (name, description, isData, isAscending)
 VALUES
-    (?, ?, ?)
+    (?, ?, ?, ?)
 '''
 
 PAGE_SIZE = 25
@@ -270,7 +271,9 @@ def add_field(table):
     name = request.headers['fieldName']
     description = request.headers.get('fieldDescription')
     # whether the field is data for calculations or info (like college name)
-    is_data = int(request.headers['fieldIsData'].lower() == "true")
+    is_data = int(request.headers['fieldIsData'].lower() == 'true')
+    # whether lower values are better
+    is_ascending = int(request.headers['fieldIsAscending'].lower() == 'true')
     if field_exists(table, name):
         raise Exception(FIELD_EXISTS)
     else:
@@ -278,7 +281,7 @@ def add_field(table):
         table_id = get_table_id(table)
         db.execute(INSERT_FIELD.format(
             field_table=FIELDS + table_id),
-            (name, description, is_data)
+            (name, description, is_data, is_ascending)
         )
         db.execute('ALTER TABLE {entries_table} ADD COLUMN {field_id} {data_type}'.format(
             entries_table=ENTRIES + table_id,
@@ -292,14 +295,21 @@ def add_field(table):
 @bp.route('/<string:table>/<string:field>/edit', methods=('PUT',))
 def edit_field(table, field):
     new_name = request.headers.get('newFieldName')
+    new_description = request.headers.get('newFieldDescription')
+    is_ascending = int(request.headers.get('newFieldIsAscending').lower() == 'true')
+    if not field_exists(table, field):
+        raise Exception(FIELD_DOESNT_EXIST)
     if field_exists(table, new_name):
         raise Exception(FIELD_EXISTS)
-    elif not field_exists(table, field):
-        raise Exception(FIELD_DOESNT_EXIST)
-    else:
-        db = get_db()
+    db = get_db()
+    if new_description is not None:
+        db.execute(f'UPDATE {FIELDS + get_table_id(table)} SET description=? WHERE name=?', (new_description, field))
+    if is_ascending is not None:
+        db.execute(f'UPDATE {FIELDS + get_table_id(table)} SET isAscending=? WHERE name=?', (is_ascending, field))
+    if new_name is not None:
         db.execute(f'UPDATE {FIELDS + get_table_id(table)} SET name=? WHERE name=?', (new_name, field))
-        db.commit()
+    db.commit()
+    return 'Field edited'
 
 
 @bp.route('/<string:table>/<string:field>/delete', methods=('DELETE',))
@@ -339,11 +349,12 @@ def average_criteria(e, criteria, weights, field_info, max_entries, min_entries)
         try:
             index = criteria.index(key)
             if key != 'id' and bool(field_info[key]['isData']):
+                weight = weights[index] * (-1 if bool(field_info[key]['isAscending']) else 1)
                 if value is not None:
-                    total += weights[index] * (value - min_entries[key]) / (max_entries[key] - min_entries[key])
+                    total += weight * (value - min_entries[key]) / (max_entries[key] - min_entries[key])
                 else:
-                    if weights[index] < 0:
-                        total += weights[index]
+                    if weight < 0:
+                        total += weight
                     total -= 0.0001  # to differentiate between the lowest value
         except ValueError:
             pass

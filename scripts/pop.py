@@ -20,7 +20,7 @@ for [ind, val] in dat.iterrows():
             nv[names[i]] = val[params[i]]
     # print(nv)
     temp.append(nv)
-    if len(temp) == 100:
+    if len(temp) == 25:
         nv_list.append(list(temp))
         temp.clear()
 if not len(temp) == 0:
