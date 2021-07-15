@@ -149,7 +149,7 @@ def delete_entry(table, entry_id):
 @bp.route('/<string:table>/entries')
 def get_entries(table):
     criteria = request.args.get('sort')
-    weights = request.args.get('columnWeights')
+    weights = request.args.get('fieldWeights')
     page = request.args.get('page')  # page starts at 1
     if page is None:
         page = 1

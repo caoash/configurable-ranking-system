@@ -27,12 +27,12 @@ const Table = (props) => {
     useEffect(() => {
         if (sortWeights === null || gParams === null) return;
         const fetchSortedData = (async () => {
-            let qryString = C.API + '/college/entries?sort='
+            let qryString = C.TABLES + '/college/entries?sort='
             for (let i = 0; i < gParams.length; i++) {
                 qryString += gParams[i];
                 if (i !== gParams.length - 1) qryString += ",";
             }   
-            qryString += "&columnWeights=";
+            qryString += "&fieldWeights=";
             for (let i = 0; i < sortWeights.length; i++) {
                 qryString += sortWeights[i];
                 if (i !== sortWeights.length - 1) qryString += ",";
@@ -50,8 +50,8 @@ const Table = (props) => {
         fetchSortedData();
     }, [sortWeights, props.page]);
     async function fetchData() {
-        console.log(C.API + '/college/entries?page='+ props.page);
-        await axios.get(C.API + '/college/entries?page='+props.page).then(async response => {
+        console.log(C.TABLES + '/college/entries?page='+ props.page);
+        await axios.get(C.TABLES + '/college/entries?page='+props.page).then(async response => {
             let get = response.data;
             // console.log(get);
             setNp(Object.keys(get[0]).length - 1);

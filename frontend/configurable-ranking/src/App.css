@@ -5,6 +5,7 @@
   position: relative;
   flex-wrap: wrap;
   align-items:center;
+  height: 100%;
 }
 
 .main-body {
@@ -16,9 +17,14 @@
   margin-right: 6%;
   margin-bottom: 80px;
   width: 88%;
+  height: 100%
 }
 
 .center-text {
   display: flex;
   justify-content: center;
+}
+
+#root {
+    height: 100%;
 }

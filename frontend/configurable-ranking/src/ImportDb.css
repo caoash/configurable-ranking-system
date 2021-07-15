@@ -1,0 +1,10 @@
+.large-textarea {
+    resize: none;
+    flex: 1;
+    height: 80%;
+}
+
+.link {
+    color: black;
+    text-decoration: none;
+}

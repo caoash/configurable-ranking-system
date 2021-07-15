@@ -1,0 +1,30 @@
+{
+    "source": "internet-url" | "file",
+    "url": "http://fakeurl.com/collegedatabase.csv",
+    "format": "csv"
+    "zipped": "true" | "false",
+    "name": "Colleges",
+    "description": "This database stores helpful information about colleges in the United States",
+    "columns": [
+        {
+            "name": "Admission Rate",
+            "description": "The percentage of applying students accepted into the school",
+            "source-column": "ADM_RATE",
+            "is-data": "true",
+            "sort-direction": "ascending"
+        },
+        {
+            "name": "Average SAT",
+            "description": "The average student SAT score (0-1600)",
+            "source-column": "SAT_AVG",
+            "is-data": "true",
+            "sort-direction": "descending"
+        },
+        {
+            "name": "Name",
+            "description": "The name of the institution",
+            "source-column": "INSTNM",
+            "is-data": "false",
+        }
+    ]
+}

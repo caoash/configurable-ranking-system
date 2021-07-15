@@ -32,7 +32,7 @@ const Body = () => {
     
     const fetchData = async () => {
         let head = [];
-        await axios.get(C.API + '/college/entries?page=' + curPage).then(async response => {
+        await axios.get(C.TABLES + '/college/entries?page=' + curPage).then(async response => {
             const upd = () => {
                 let res = response.data;
                 let ind = 1;
@@ -46,7 +46,7 @@ const Body = () => {
         }).catch(error => {
             console.log(error)
         });
-        await axios.get(C.API + '/college/page-count').then(async response => {
+        await axios.get(C.TABLES + '/college/page-count').then(async response => {
             setNumpages(response.data);
         }).catch(error => {
             console.log(error);
