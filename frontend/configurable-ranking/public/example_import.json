@@ -1,6 +1,7 @@
 {
     "viewName": "Colleges",
     "name": "college",
+    "importEntries": true,
     "overwrite": true,
     "description": "This database stores helpful information about colleges in the United States",
     "fields": [

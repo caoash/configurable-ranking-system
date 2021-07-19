@@ -11,12 +11,19 @@ class ImportDb extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            status: "Enter your import config below: ",
+            status: "End",
             statusColor: this.StatusColors.STATUS
         }
     }
+
     textarea = React.createRef();
     fileInput = React.createRef();
+    statusText = React.createRef();
+
+    componentDidMount() {
+        this.statusText.current.innerHTML = "Enter your import config below (<a class='link' href='/example_import.json' target='_blank'>example</a>): ";
+        console.log("hi");
+    }
 
     DataType = {
         CSV: 0
@@ -102,7 +109,7 @@ class ImportDb extends Component {
             add();
         };
         var createFields = () => {
-            checkMissing("fields", "Expected root property 'fields'");
+            checkMissing("fields", "Expected config root property 'fields'");
             var headerList = [];
             var fieldList = [];
             config.fields.forEach((field) => {
@@ -133,13 +140,16 @@ class ImportDb extends Component {
                         addField();
                     });
                 } else {
-                    addEntries(fieldList);
+                    if (!config.hasOwnProperty("importEntries") || config.importEntries) {
+                        this.success("Database instantiated");
+                        addEntries(fieldList);
+                    }
                 }
             };
             addField();
         };
         var createTable = () => {
-            checkMissing("name", "Expected root property 'name'");
+            checkMissing("name", "Expected config root property 'name'");
             axios.post(API.TABLES + "/create", {}, {headers: {
                 tableName: config.name,
                 viewName: config.viewName || config.name,
@@ -159,6 +169,7 @@ class ImportDb extends Component {
         var config = JSON.parse(this.textarea.current.value);
         var next = () => {
             var reader = new FileReader();
+            this.status("Loading file (browser might freeze for a second)");
             if (file.name.split(".").pop() === "csv") {
                 reader.readAsText(file, "UTF-8");
                 reader.onload = (evt) => {
@@ -191,9 +202,8 @@ class ImportDb extends Component {
                 <div className="move">
                     <div className="sep">
                         <h1>Import Database</h1>
-                        <a className="link" href="/example_import.json" target="_blank"><p>Config example</p></a>
                     </div>
-                    <p style={{color: "#" + this.state.statusColor}}>{this.state.status}</p>
+                    <p ref={this.statusText} style={{color: "#" + this.state.statusColor}}>{this.state.status}</p>
                     <textarea ref={this.textarea} className="large-textarea" onKeyDown={this.onKeyDown}></textarea>
                     <Button variant="outlined" onClick={() => this.fileInput.current.click()}>Import Data</Button>
                     <input ref={this.fileInput} onChange={this.importLocal} type="file" className="hidden"/>
