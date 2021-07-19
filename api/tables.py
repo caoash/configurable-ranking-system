@@ -94,12 +94,12 @@ def add_entries(table):
             raise Exception('Must add a field before adding entries')
         fields_tuple = ()
         for field in table_fields:
-            data = entry_fields[field['name']]
+            data = entry_fields.get(field['name'])
             if field['isData']:
                 try:
                     fields_tuple += (float(data),)
-                except ValueError:
-                    raise Exception('Could not convert string to numeric')
+                except (ValueError, TypeError):
+                    fields_tuple += (None,)
             else:
                 fields_tuple += (data,)
         db.execute('INSERT INTO {entry_table} ({field_names}) VALUES ({question_marks})'.format(
@@ -107,7 +107,6 @@ def add_entries(table):
             field_names=str.join(', ', [FIELD + str(e['id']) for e in table_fields]),
             question_marks=('?, ' * len(fields_tuple))[:-2]
         ), fields_tuple)
-        print('t')
     db.commit()
     return 'Entry added'
 

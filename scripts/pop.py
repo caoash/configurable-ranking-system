@@ -2,6 +2,8 @@ import pandas as pd
 import requests as req
 import json
 
+# import page exists in frontend now
+
 params = ["ADM_RATE", "SAT_AVG", "INSTNM", "STABBR", "INSTURL"]
 names = ["Admission Rate", "Average SAT", "Name", "State", "Website"]
 is_data = ["true", "true", "false", "false", "false"]

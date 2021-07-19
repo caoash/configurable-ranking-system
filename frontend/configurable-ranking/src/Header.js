@@ -1,9 +1,7 @@
 import "./Header.css"
 import Textbox from "./Textbox.js"
 import LargeTextbox from "./LargeTextbox.js"
-import * as C from './Constants.js'
-import axios from "axios"
-import {useEffect, useRef, useState} from "react"
+import {useEffect, useRef} from "react"
 
 const useInterval = (callback, delay) => {
   const savedCallback = useRef();
