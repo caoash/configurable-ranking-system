@@ -1,0 +1,104 @@
+{
+    "viewName": "Colleges",
+    "name": "college",
+    "importEntries": true,
+    "overwrite": true,
+    "description": "This database stores helpful information about colleges in the United States",
+    "fields": [
+        {
+            "name": "Name",
+            "description": "The name of the institution",
+            "sourceColumn": "INSTNM",
+            "isData": false
+        },
+        {
+            "name": "State",
+            "description": "Institution's state",
+            "sourceColumn": "STABBR",
+            "isData": false
+        },
+        {
+            "name": "Website URL",
+            "description": "URL of institution's website",
+            "sourceColumn": "INSTURL",
+            "isData": false
+        },
+        {
+            "name": "Admission rate",
+            "description": "The percentage of applying students accepted into the school",
+            "sourceColumn": "ADM_RATE",
+            "isData": true,
+            "sortDirection": "ascending"
+        },
+        {
+            "name": "Average SAT",
+            "description": "The average student SAT score (0-1600)",
+            "sourceColumn": "SAT_AVG",
+            "isData": true,
+            "sortDirection": "descending"
+        },
+        {
+            "name": "Undergraduate count",
+            "description": "Number of undergraduate students",
+            "sourceColumn": "UGDS",
+            "isData": true,
+            "sortDirection": "descending"
+        },
+        {
+            "name": "Graduate count",
+            "description": "Number of graduate students",
+            "sourceColumn": "GRADS",
+            "isData": true,
+            "sortDirection": "descending"
+        },
+        {
+            "name": "In-state cost",
+            "description": "Average in-state admission fee",
+            "sourceColumn": "TUITIONFEE_IN",
+            "isData": true,
+            "sortDirection": "ascending"
+        },
+        {
+            "name": "Out-state cost",
+            "description": "Average out-of-state admission fee",
+            "sourceColumn": "TUITIONFEE_OUT",
+            "isData": true,
+            "sortDirection": "ascending"
+        },
+        {
+            "name": "Median earnings",
+            "description": "Median earnings of students 10 years post graduation",
+            "sourceColumn": "MD_EARN_WNE_P10",
+            "isData": true,
+            "sortDirection": "descending"
+        },
+        {
+            "name": "Average debt",
+            "description": "Average debt of students after graduating",
+            "sourceColumn": "GRAD_DEBT_MDN",
+            "isData": true,
+            "sortDirection": "ascending"
+        },
+        {
+            "name": "Completion rate",
+            "description": "Completion rate in 100% duration for 4 year institutions",
+            "sourceColumn": "C100_4_POOLED_SUPP",
+            "isData": true,
+            "sortDirection": "descending"
+        },
+        {
+            "name": "Completion rate (in 200% duration)",
+            "description": "Completion rate in 200% duration for 4 year institutions",
+            "sourceColumn": "C200_4_POOLED_SUPP",
+            "isData": true,
+            "sortDirection": "descending"
+        },
+        {
+            "name": "Completion rate (under 4 year institutions)",
+            "description": "Completion rate in 100% duration for under 4 year institutions",
+            "sourceColumn": "C100_L4",
+            "isData": true,
+            "sortDirection": "descending"
+        }
+    ]
+}

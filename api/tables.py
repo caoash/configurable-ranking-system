@@ -150,12 +150,43 @@ def get_entries(table):
     criteria = request.args.get('sort')
     weights = request.args.get('fieldWeights')
     page = request.args.get('page')  # page starts at 1
+    filters_json = request.args.get('filter')  # expects a json object of each field id and its associated filter,
+    # if isData is true then it expects a min and max value, otherwise a list of substrings to check for
     if page is None:
         page = 1
     db = get_db()
     table_id = get_table_id(table)
-    entries = db.execute(f'SELECT * FROM {ENTRIES + table_id}').fetchall()
     table_fields = db.execute(f'SELECT * FROM {FIELDS + table_id}').fetchall()
+    select = f'SELECT * FROM {ENTRIES + table_id} WHERE '
+    placeholders = ()
+    if filters_json is not None:
+        splice = False
+        filters = json.loads(filters_json)
+        for field in table_fields:
+            field_id = str(field['id'])
+            if field_id in filters:
+                if field['isData']:
+                    if 'min' in filters[field_id]:
+                        select += f'{FIELD + field_id} >= ? AND '
+                        placeholders += (filters[field_id]['min'],)
+                        splice = True
+                    elif 'max' in filters[field_id]:
+                        select += f'{FIELD + field_id} <= ? AND '
+                        placeholders += (filters[field_id]['max'],)
+                        splice = True
+                else:
+                    queries = []
+                    for substring in filters[field_id].get('substrings', []):
+                        queries.append(f'{FIELD + field_id} LIKE ?')
+                        placeholders += (f'%{substring}%',)
+                    if len(queries):
+                        select += f'({str.join(" OR ", queries)}) AND '
+                        splice = True
+        if splice:
+            select = select[:-4]  # remove extra AND
+        else:
+            select = select[:-7]  # remove extra WHERE
+    entries = db.execute(select, placeholders).fetchall()
     for field in table_fields:
         for i in range(len(entries)):
             entries[i][field['name']] = entries[i].pop(FIELD + str(field['id']))
@@ -181,7 +212,7 @@ def get_entries(table):
             e, criteria_list, weights_list,
             field_info,
             max_entries, min_entries)
-         )
+                     )
     start = PAGE_SIZE * (int(page) - 1)
     if start >= len(entries):
         return jsonify([])
