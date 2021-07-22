@@ -159,8 +159,8 @@ def get_entries(table):
     table_fields = db.execute(f'SELECT * FROM {FIELDS + table_id}').fetchall()
     select = f'SELECT * FROM {ENTRIES + table_id} WHERE '
     placeholders = ()
+    splice = False
     if filters_json is not None:
-        splice = False
         filters = json.loads(filters_json)
         for field in table_fields:
             field_id = str(field['id'])
@@ -182,10 +182,10 @@ def get_entries(table):
                     if len(queries):
                         select += f'({str.join(" OR ", queries)}) AND '
                         splice = True
-        if splice:
-            select = select[:-4]  # remove extra AND
-        else:
-            select = select[:-7]  # remove extra WHERE
+    if splice:
+        select = select[:-4]  # remove extra AND
+    else:
+        select = select[:-7]  # remove extra WHERE
     entries = db.execute(select, placeholders).fetchall()
     for field in table_fields:
         for i in range(len(entries)):
