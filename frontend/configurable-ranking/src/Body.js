@@ -3,7 +3,7 @@ import "./Body.css";
 import axios from "axios";
 import * as C from "./Constants.js";
 import {useState, useEffect, useRef, createRef} from "react";
-import {TextField, Button, Select, InputLabel, MenuItem, FormControl} from '@material-ui/core'
+import {FormControlLabel, Checkbox, Button, Select, InputLabel, MenuItem, FormControl} from '@material-ui/core'
 
 const Body = () => {
     const [headers, setHeaders] = useState(null);
@@ -13,12 +13,13 @@ const Body = () => {
     const [curPage, setCurPage] = useState(1);
     const [numPages, setNumpages] = useState(0);
     const [formItems, setFormItems] = useState([]);
+    const [checked, setChecked] = useState([]);
+
 
     const updData = async () => {
         let arr = [];
-        arr.push(1);
-        for (let i = 1; i < headers.length; i++) {
-            arr.push(0);
+        for (let i = 0; i < headers.length; i++) {
+            arr.push(1);
         }
         // console.log("WEIGHTS SET TO: ");
         // console.log(arr);
@@ -36,10 +37,13 @@ const Body = () => {
             const upd = () => {
                 let res = response.data;
                 let ind = 1;
-                head.push(["Name", 0]);
+                // head.push(["Name", 0]);
                 for (let j in res[0]) {
+                    console.log(isNaN(res[0][j]));
+                    if (isNaN(res[0][j])) continue;
                     if (j !== "id" && j !== "Name") head.push([j, ind++]);
                 }
+                console.log(head);
                 return head;
             };
             setHeaders(upd());
@@ -56,12 +60,8 @@ const Body = () => {
     const updateWeights = async () => {
         let newWeights = weights.slice();
         for (let i = 0; i < headers.length; i++) {
-            let cur = textRef.current[i];
-            // console.log(cur);
-            let val = await cur.current.value;
-            // console.log(val);
-            if (isNaN(val)) return;
-            newWeights[i] = parseFloat(val);
+            let cur = checked[i];
+            newWeights[i] = (cur ? 1 : 0);
         }
         setCurPage(1);
         setWeights(newWeights);
@@ -102,8 +102,18 @@ const Body = () => {
         let cur = [];   
         for (let i = 0; i < headers.length; i++) textRef.current[i] = createRef();
         for (let i = 0; i < headers.length; i++) {
+            const handleChange = (event) => {
+                let temp = checked.slice();
+                temp[i] = event.target.checked;
+                setChecked(temp);
+            };
             let x = headers[i];
-            cur.push(<TextField key={x[1]} id={x[1].toString()} label={x[0]} variant="outlined" inputRef = {textRef.current[i]} className = "field"/>);
+            cur.push(
+                <FormControlLabel
+                    control={<Checkbox checked={checked[i]} onChange={handleChange} />}
+                    label={x[0]}
+                />
+            );
         }
         return (
             <div className = "main-body">

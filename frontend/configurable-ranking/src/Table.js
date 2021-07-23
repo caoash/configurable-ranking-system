@@ -14,6 +14,7 @@ const Table = (props) => {
     const [nc, setNc] = useState(-1);
     const [np, setNp] = useState(-1);
     const [gParams, setgParams] = useState(null);
+    const [aParams, setaParams] = useState(null);
 
     // console.log(sortBy);
     // console.log(fin);
@@ -56,11 +57,21 @@ const Table = (props) => {
             // console.log(get);
             setNp(Object.keys(get[0]).length - 1);
             let params = [];
-            params.push("Name");
+            let params2 = [];
+            params2.push("Name");
             for (let j in get[0]) {
-                if (j !== "id" && j !== "Name") params.push(j);
+                if (j !== "id" && j !== "Name") {
+                    if (isNaN(get[0][j])) {
+                        params2.push(j);
+                        continue;
+                    }
+                    params.push(j);
+                    params2.push(j);
+                }
+                
             }
-            if (gParams === null) await setgParams(params);
+            if (gParams === null) await setgParams(params);  
+            if (aParams === null) await setaParams(params2)
             setSortWeights(props.arr);
             setRes(get);
             setInit(true);
@@ -84,7 +95,7 @@ const Table = (props) => {
             }
             objs.push(cur);
         }
-        let hinfo = gParams;
+        let hinfo = aParams;
         let tbhead = [];
         if (nr === -1 && nc === -1) {
             setNr(objs.length + 1);
