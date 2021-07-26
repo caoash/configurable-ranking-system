@@ -23,6 +23,7 @@ const Table = (props) => {
     }, [props.arr]);
 
     useEffect(() => {
+        
         if (!done) fetchData();
     }, []);
     useEffect(() => {
@@ -39,21 +40,32 @@ const Table = (props) => {
                 if (i !== sortWeights.length - 1) qryString += ",";
             }
             qryString += ("&page=" + props.page);
+            let qryParam = JSON.stringify(props.filterList).split(" ").join("").split("\\").join("");
+            qryParam = qryParam.substr(1, qryParam.length - 2);
+            qryString += ("&filter=" + qryParam);
             await axios.get(qryString).then(async response => {
                 let get = response.data;
-                await setRes(get);
-                await setFin(true);
-                await setDone(true);
+                if (get.length === 0) {
+                    return;
+                }
+                setRes(get);
+                setFin(true);
+                setDone(true);
             }).catch(error => {
-                console.log(error);
+                // console.log(error);
             })
         })
         fetchSortedData();
     }, [sortWeights, props.page]);
     async function fetchData() {
         console.log(C.TABLES + '/college/entries?page='+ props.page);
-        await axios.get(C.TABLES + '/college/entries?page='+props.page).then(async response => {
+        let qryParam = JSON.stringify(props.filterList).split(" ").join("").split("\\").join("");
+        qryParam = qryParam.substr(1, qryParam.length - 2);
+        await axios.get(C.TABLES + '/college/entries?page='+ props.page + "&filter=" + qryParam).then(async response => {
             let get = response.data;
+            if (get.length === 0) {
+                return;
+            }
             // console.log(get);
             setNp(Object.keys(get[0]).length - 1);
             let params = [];
@@ -77,7 +89,7 @@ const Table = (props) => {
             setInit(true);
             setFin(false);
         }).catch(error => {
-            console.log(error);
+            // console.log(error);
         })
     }
     
@@ -105,14 +117,15 @@ const Table = (props) => {
         for (let i = 0; i < hinfo.length; i++) {
             tbhead.push(<th key = {i}> <button onClick = {() => {
                 let wgts = [];
-                for (let j = 0; j < np; j++) {
-                    if (i === j) wgts.push(1);
+                for (let j = 0; j < gParams.length; j++) {
+                    console.log(gParams[j] + " " + hinfo[i]);
+                    if (gParams[j] === hinfo[i]) wgts.push(1);
                     else wgts.push(0);
                 }
                 setSortWeights(wgts);
                 setFin(false);
                 props.resetF();
-            }} key = {i}> {hinfo[i]} </button></th>);
+            }} key = {i} className = "my_button"> {hinfo[i]} </button></th>);
         }
         let rows = [];
         for (let i = 0; i < objs.length; i++) {
@@ -135,6 +148,7 @@ const Table = (props) => {
     } else {
         return (
             <>
+                <h1 className = "cent"> No Colleges Found</h1>
             </>
         );
     }
