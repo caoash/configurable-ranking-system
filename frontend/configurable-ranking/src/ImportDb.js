@@ -132,6 +132,7 @@ class ImportDb extends Component {
                 headerList.push(headers);
                 fieldList.push(field)
             });
+            headerList.reverse();
             var addField = () => {
                 if (headerList.length) {
                     axios.post(API.TABLES + `/${config.name}/add-field`, {}, {
