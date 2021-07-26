@@ -6,6 +6,7 @@
   flex-wrap: wrap;
   align-items:center;
   height: 100%;
+  width: 120%;
 }
 
 .main-body {
@@ -27,4 +28,24 @@
 
 #root {
     height: 100%;
+}
+
+
+ul {
+  text-align: left;
+  width: 400px;
+}
+
+input {
+  height: 27px;
+  margin: 4px;
+  padding: 4px;
+  font-size: 24px;
+}
+
+button {
+  height: 40px;
+  margin: 4px;
+  padding: 4px;
+  font-size: 24px;
 }

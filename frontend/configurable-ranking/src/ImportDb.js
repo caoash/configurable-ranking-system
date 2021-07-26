@@ -203,7 +203,7 @@ class ImportDb extends Component {
         console.log(window.React1 === window.React2);
         return (
             <div className="main-body">
-                <div className="move">
+                <div className="move_box">
                     <div className="sep">
                         <h1>Import Database</h1>
                     </div>
