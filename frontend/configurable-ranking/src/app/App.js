@@ -1,4 +1,4 @@
-import './App.css';
+import '../resources/App.css';
 import Header from "./Header.js"
 import {BrowserRouter, Route, Redirect} from 'react-router-dom'
 import Body from "./Body.js"

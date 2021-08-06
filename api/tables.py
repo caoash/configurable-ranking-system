@@ -147,8 +147,7 @@ def delete_entry(table, entry_id):
 
 @bp.route('/<string:table>/entries')
 def get_entries(table):
-    criteria = request.args.get('sort')
-    weights = request.args.get('fieldWeights')
+    weights = request.args.get('fieldWeights')  # weights in order of the field ids
     page = request.args.get('page')  # page starts at 1
     filters_json = request.args.get('filter')  # expects a json object of each field id and its associated filter,
     # if isData is true then it expects a min and max value, otherwise a list of substrings to check for
@@ -187,37 +186,42 @@ def get_entries(table):
     else:
         select = select[:-7]  # remove extra WHERE
     entries = db.execute(select, placeholders).fetchall()
+    max_entries = []
+    min_entries = []
+    # todo this could be optimized so that the values are stored in the fields tables and then invalidated when
+    #  the entries are changed
+    for field in table_fields:
+        field_id = get_field_id(table, field['name'])
+        max_entries.append(get_single_result(
+            db.execute(f'SELECT MAX({field_id}) FROM {ENTRIES + table_id}')))
+        min_entries.append(get_single_result(
+            db.execute(f'SELECT MIN({field_id}) FROM {ENTRIES + table_id}')))
+    weights_list = []
+    if weights is None:
+        weights_list = [1] * len(table_fields)
+    else:
+        weights_list = [float(w) if w != 'NaN' or not len(w) else 0 for w in weights.split(',')]
+    if len(weights_list) != len(table_fields):  # accounting for id
+        raise Exception('List of weights needs to be equal to the number of fields')
+    entries.sort(reverse=True, key=lambda e: average_criteria(
+        e, weights_list,
+        table_fields,
+        max_entries, min_entries)
+    )
+    start = PAGE_SIZE * (int(page) - 1)
+    if start >= len(entries) and len(entries):
+        return jsonify([])
+    end = min(len(entries), start + 25)
+    total_length = len(entries)
+    entries = entries[start:end]
     for field in table_fields:
         for i in range(len(entries)):
             entries[i][field['name']] = entries[i].pop(FIELD + str(field['id']))
-    if criteria is not None:
-        max_entries = {}
-        min_entries = {}
-        field_info = {}
-        for field in table_fields:
-            field_info[field['name']] = field
-            max_entries[field['name']] = get_single_result(
-                db.execute(f'SELECT MAX({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}'))
-            min_entries[field['name']] = get_single_result(
-                db.execute(f'SELECT MIN({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}'))
-        weights_list = []
-        criteria_list = criteria.split(',')
-        if weights is None:
-            weights_list = [1] * len(criteria_list)
-        else:
-            weights_list = [float(w) if w != 'NaN' else 0 for w in weights.split(',')]
-        if len(weights_list) != len(criteria_list):
-            raise Exception('List of weights needs to be equal in length to list of selected criteria')
-        entries.sort(reverse=True, key=lambda e: average_criteria(
-            e, criteria_list, weights_list,
-            field_info,
-            max_entries, min_entries)
-                     )
-    start = PAGE_SIZE * (int(page) - 1)
-    if start >= len(entries):
-        return jsonify([])
-    end = min(len(entries), start + 25)
-    return jsonify(entries[start:end])
+    return jsonify({
+        "total": total_length,
+        "pageCount": math.ceil(total_length / PAGE_SIZE),
+        "entries": entries
+    })
 
 
 @bp.route('/<string:table>/entry-count')
@@ -373,21 +377,21 @@ def delete_field(table, field):
     return 'Field deleted'
 
 
-def average_criteria(e, criteria, weights, field_info, max_entries, min_entries):
+def average_criteria(e, weights, field_info, max_entries, min_entries):
     total = 0
-    for key, value in e.items():
-        try:
-            index = criteria.index(key)
-            if key != 'id' and bool(field_info[key]['isData']):
-                weight = weights[index] * (-1 if bool(field_info[key]['isAscending']) else 1)
+    i = 0
+    for field in field_info:
+        if field['name'] != 'id' and bool(field['isData']):
+            if weights[i] != 0:
+                weight = weights[i] * (-1 if bool(field['isAscending']) else 1)
+                value = e[FIELD + str(field['id'])]
                 if value is not None:
-                    total += weight * (value - min_entries[key]) / (max_entries[key] - min_entries[key])
+                    total += weight * (value - min_entries[i]) / (max_entries[i] - min_entries[i])
                 else:
                     if weight < 0:
                         total += weight
                     total -= 0.0001  # to differentiate between the lowest value
-        except ValueError:
-            pass
+            i += 1
     return total
 
 

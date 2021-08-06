@@ -2,9 +2,7 @@ import React, { Component } from "react"
 import { Button } from "@material-ui/core";
 import axios from "axios";
 import { readString } from 'react-papaparse'
-import Textbox from "./Textbox.js"
-import "./Body.css";
-import "./ImportDb.css";
+import "../resources/App.css";
 import * as API from "./Constants.js"
 
 class ImportDb extends Component {
@@ -22,7 +20,6 @@ class ImportDb extends Component {
 
     componentDidMount() {
         this.statusText.current.innerHTML = "Enter your import config below (<a class='link' href='/example_import.json' target='_blank'>example</a>): ";
-        console.log("hi");
     }
 
     DataType = {
@@ -42,7 +39,7 @@ class ImportDb extends Component {
     onKeyDown = (e) => {  // so tabs work
         var CODE = 9;
         var TAB = "    ";
-        if(e.keyCode == CODE) {
+        if(e.keyCode === CODE) {
             var area = this.textarea.current
             var startPos = area.selectionStart;
             var endPos = area.selectionEnd;
@@ -203,15 +200,13 @@ class ImportDb extends Component {
         console.log(window.React1 === window.React2);
         return (
             <div className="main-body">
-                <div className="move_box">
-                    <div className="sep">
-                        <h1>Import Database</h1>
-                    </div>
-                    <p ref={this.statusText} style={{color: "#" + this.state.statusColor}}>{this.state.status}</p>
-                    <textarea ref={this.textarea} className="large-textarea" onKeyDown={this.onKeyDown}></textarea>
-                    <Button variant="outlined" onClick={() => this.fileInput.current.click()}>Import Data</Button>
-                    <input ref={this.fileInput} onChange={this.importLocal} type="file" className="hidden"/>
+                <div className="sep">
+                    <h1>Import Database</h1>
                 </div>
+                <p ref={this.statusText} style={{color: "#" + this.state.statusColor}}>{this.state.status}</p>
+                <textarea ref={this.textarea} className="large-textarea" onKeyDown={this.onKeyDown}></textarea>
+                <Button variant="outlined" onClick={() => this.fileInput.current.click()}>Import Data</Button>
+                <input ref={this.fileInput} onChange={this.importLocal} type="file" className="hidden"/>
             </div>
         );
     }

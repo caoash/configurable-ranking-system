@@ -1,0 +1,221 @@
+html, body {
+    height: 100%;
+}
+
+#root {
+    height: 100%;
+}
+
+.main-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+.main-body > * {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.main-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin: 30px;
+  width: 88%;
+  height: 80%;
+  flex: 1;
+}
+
+/* Header */
+
+.fixed-top {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1030;
+}
+
+.bg-dark {
+    background-color: #343a40!important;
+}
+
+.header {
+    position: relative;
+    /* display: -ms-flexbox; */
+    flex-direction: row;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: .5rem 1rem;
+    box-sizing: border-box;
+    max-width: 1140px;
+    width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.header-text-format {
+    display: block;
+    padding: .5rem 1rem;
+    color:lightgrey;
+    font-size: 1.1rem;
+    font-weight: 420;
+    line-height: 1.5;
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    margin: 0;
+    text-decoration: none;
+}
+
+.header-text-format:hover{
+    color:white;
+}
+
+/* Table */
+
+.table-container {
+    overflow: scroll;
+    min-height: 70%;
+}
+
+.table {
+    margin-bottom: 1rem;
+    color: #212529;
+    table-layout: auto !important;
+}
+
+.table-bordered {
+    border: 1px solid #dee2e6;
+}
+
+.table-bordered td, .table-bordered th {
+    border: 1px solid #dee2e6;
+    border-bottom-width: 2px;
+}
+
+.table td, .table th {
+    padding: .25rem;
+    vertical-align: top;
+    border-top: 1px solid #dee2e6;
+    max-width:100%;
+    white-space:nowrap;
+    width: auto !important;
+}
+
+thead, tbody {
+    display: table-header-group;
+    vertical-align: middle;
+    border-color: inherit;
+}
+
+.table thead th {
+    vertical-align: middle;
+    border-bottom: 2px solid #dee2e6;
+}
+
+table {
+    display: table;
+    border-collapse: collapse;
+    box-sizing: border-box;
+    text-indent: initial;
+    border-spacing: 2px;
+    border-color: grey;
+    font-weight: 450;
+    text-indent: initial;
+    border-spacing: 2px;
+}
+
+
+.fixed-head {
+    position: sticky;
+    top: 0;
+    background: rgba(205, 205, 205, 0.7);
+}
+
+.table-text, .header-text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.table-text:hover, .header-text:hover {
+    overflow: visible;
+    width: auto;
+    position: sticky;
+}
+
+.table-text:hover span {
+    background-color: #FFFFFF;
+    display: inline-block;
+}
+
+.header-text:hover span {
+    background-color: rgb(205, 205, 205);
+    display: inline-block;
+}
+
+/* Previous ImportDb.css */
+
+.large-textarea {
+    resize: none;
+    flex: 1;
+    height: auto;
+}
+
+.link {
+    color: black;
+}
+
+.hidden {
+    display: none;
+}
+
+.hbox {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.center {
+    text-align: center;
+}
+
+.large-text-format {
+    display: block;
+    padding: .5rem 1rem;
+    color: white;
+    font-size: 1.3rem;
+    font-weight: 500;
+    line-height: 1.5;
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    margin: 0;
+}
+
+.inline-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.inline-row > * {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+nav {
+    margin: auto;
+}
+
+.grow {
+    flex: 1;
+}
