@@ -175,6 +175,7 @@ table {
 }
 
 .link {
+    text-decoration: underline;
     color: black;
 }
 
@@ -233,4 +234,14 @@ nav {
 
 .no-margin {
     margin: 1px;
+}
+
+.modal-paper {
+    background-color: white;
+    box-shadow: 1px 1px 1px black;
+    outline: none;
+    min-height: 40%;
+    padding: 10px;
+    max-height: 90vh;
+    overflow-y: auto;
 }

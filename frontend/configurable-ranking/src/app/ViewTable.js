@@ -1,12 +1,14 @@
 import React from "react"
-import Table from "./Table";
-import * as C from "./Constants.js";
 import {useState, useEffect, useReducer} from "react";
 import {useParams} from "react-router-dom";
 import {Button, TextField, IconButton} from "@material-ui/core"
 import {Pagination} from "@material-ui/lab"
 import {Search} from "@material-ui/icons"
 import axios from "axios";
+import Table from "./Table";
+import TableInfoModal from "./TableInfoModal.js";
+import * as C from "./Constants.js";
+import * as UI from "./ComponentStyles.js";
 
 const ViewTable = () => {
     const [pageCount, setPageCount] = useState(0);
@@ -19,7 +21,9 @@ const ViewTable = () => {
     );
     const [tableInfo, setTableInfo] = useState({});
     const [entries, setEntries] = useState([]);
+    const [showInfoModal, setShowInfoModal] = useState(false);
     const {tableName} = useParams();
+    const classes = UI.classes();
 
     const setWeight = (i, weight) => {
         let weights = [...tbState.fieldWeights];
@@ -126,6 +130,8 @@ const ViewTable = () => {
     return (
         <div className="main-body">
             <h1 className="center">{tableInfo.viewName}</h1>
+            <TableInfoModal open={showInfoModal} table={tableInfo} closeModal={() => setShowInfoModal(false)} classes={classes}></TableInfoModal>
+            <p className="center link" onClick={() => setShowInfoModal(true)}>Table details</p>
             <div className="hbox">
                 <TextField onKeyDown={(e) => {if (e.keyCode === 13) handleFilterSearch()}} onChange={(event) => setFilterInput(event.target.value)} label="Filter"></TextField>
                 <IconButton onClick={handleFilterSearch} type="submit"><Search/></IconButton>

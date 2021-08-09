@@ -226,22 +226,15 @@ def get_entries(table):
     })
 
 
-@bp.route('/table/<string:table>/entry-count')
-def entry_count(table):
-    return jsonify(get_single_result(get_db().execute(f'SELECT COUNT(*) FROM {ENTRIES + get_table_id(table)}')))
-
-
-@bp.route('/table/<string:table>/page-count')
-def page_count(table):
-    return jsonify(math.ceil(
-        get_single_result(get_db().execute(f'SELECT COUNT(*) FROM {ENTRIES + get_table_id(table)}')) / PAGE_SIZE))
-
-
 @bp.route('/table/<string:table>/info')
 def get_table_info(table):
     fields = get_db().execute(f'SELECT * FROM {FIELDS + get_table_id(table)}').fetchall()
-    return {**{'name': table}, **get_db().execute(f'SELECT * FROM {INFO + get_table_id(table)}').fetchone(),
-            "fields": fields}
+    entry_count = get_single_result(get_db().execute(f'SELECT COUNT(*) FROM {ENTRIES + get_table_id(table)}'))
+    return {
+        **{'name': table}, **get_db().execute(f'SELECT * FROM {INFO + get_table_id(table)}').fetchone(),
+        "fields": fields,
+        "entryCount": entry_count
+    }
 
 
 @bp.route('/tables')
