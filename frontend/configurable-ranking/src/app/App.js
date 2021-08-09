@@ -1,19 +1,26 @@
 import '../resources/App.css';
 import Header from "./Header.js"
 import {BrowserRouter, Route, Redirect} from 'react-router-dom'
-import Body from "./Body.js"
+import ViewTable from "./ViewTable.js"
+import BrowseTables from "./BrowseTables.js"
 import ImportDb from "./ImportDb.js"
 
 const App = () => {
   return (
     <BrowserRouter>
       <Route exact path = "/">
-        <Redirect to="/home"/>
+        <Redirect to="/browse"/>
       </Route>
-      <Route path = "/home">
+      <Route path = "/view/:tableName">
         <div className = "main-container">
-          <Header />
-          <Body />
+          <Header includeFake/>
+          <ViewTable />
+        </div>
+      </Route>
+      <Route path = "/browse">
+        <div className = "main-container">
+          <Header includeFake/>
+          <BrowseTables />
         </div>
       </Route>
       <Route path = "/about">
@@ -23,7 +30,7 @@ const App = () => {
       </Route>
       <Route path="/import">
         <div className="main-container">
-            <Header/>
+            <Header includeFake/>
             <ImportDb/>
         </div>
       </Route>

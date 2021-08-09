@@ -1,1 +1,4 @@
-export const TABLES = "http://localhost:5000/api/table";
+let BASE = "http://localhost:5000";
+
+export const TABLES = BASE + "/api/table";
+export const API = BASE + "/api";
