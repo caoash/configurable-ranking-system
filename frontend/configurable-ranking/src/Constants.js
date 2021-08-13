@@ -1,1 +1,0 @@
-export const TABLES = "http://localhost:5000/api/table";

@@ -8,7 +8,7 @@ try:
 except ImportError:
     from api.db import get_db
 
-bp = Blueprint('auth', __name__, url_prefix='/api/table')
+bp = Blueprint('auth', __name__, url_prefix='/api')
 
 # Explanation of current model:
 # tables and fields CANNOT be named by the user because of sql injection stuff,
@@ -43,6 +43,7 @@ CREATE_DATA_TABLE_INFO = f'''
 CREATE TABLE {{table_name}} (
     {ID_DEFINITION},
     name TEXT,
+    viewName TEXT,
     description TEXT
 )
 '''
@@ -74,14 +75,14 @@ PAGE_SIZE = 25
 MAX_ADDED_ENTRIES = 25
 
 
-@bp.route('/<string:table>/<int:entry_id>')
+@bp.route('/table/<string:table>/<int:entry_id>')
 def get_entry(table, entry_id):
     return (get_db()
             .execute(f'SELECT * FROM {ENTRIES + get_table_id(table)} WHERE id = ?', (entry_id,))
             .fetchone())
 
 
-@bp.route('/<string:table>/add-entries', methods=('POST',))
+@bp.route('/table/<string:table>/add-entries', methods=('POST',))
 def add_entries(table):
     entry_fields_list = json.loads(request.headers['entryFields'])  # dict of fields for entry
     if len(entry_fields_list) > MAX_ADDED_ENTRIES:
@@ -111,7 +112,7 @@ def add_entries(table):
     return 'Entry added'
 
 
-@bp.route('/<string:table>/<int:entry_id>/edit', methods=('PUT',))
+@bp.route('/table/<string:table>/<int:entry_id>/edit', methods=('PUT',))
 def edit_entry(table, entry_id):
     entry_fields = json.loads(request.headers['entryFields'])  # dict of fields for entry
     db = get_db()
@@ -138,17 +139,16 @@ def edit_entry(table, entry_id):
     return 'Entry edited'
 
 
-@bp.route('/<string:table>/<int:entry_id>/delete', methods=('DELETE',))
+@bp.route('/table/<string:table>/<int:entry_id>/delete', methods=('DELETE',))
 def delete_entry(table, entry_id):
     get_db().execute(f'DELETE FROM {ENTRIES + get_table_id(table)} where id=?', (entry_id,))
     get_db().commit()
     return 'Entry deleted'
 
 
-@bp.route('/<string:table>/entries')
+@bp.route('/table/<string:table>/entries')
 def get_entries(table):
-    criteria = request.args.get('sort')
-    weights = request.args.get('fieldWeights')
+    weights = request.args.get('fieldWeights')  # weights in order of the field ids
     page = request.args.get('page')  # page starts at 1
     filters_json = request.args.get('filter')  # expects a json object of each field id and its associated filter,
     # if isData is true then it expects a min and max value, otherwise a list of substrings to check for
@@ -187,53 +187,54 @@ def get_entries(table):
     else:
         select = select[:-7]  # remove extra WHERE
     entries = db.execute(select, placeholders).fetchall()
+    max_entries = []
+    min_entries = []
+    # todo this could be optimized so that the values are stored in the fields tables and then invalidated when
+    #  the entries are changed
+    for field in table_fields:
+        field_id = get_field_id(table, field['name'])
+        max_entries.append(get_single_result(
+            db.execute(f'SELECT MAX({field_id}) FROM {ENTRIES + table_id}')))
+        min_entries.append(get_single_result(
+            db.execute(f'SELECT MIN({field_id}) FROM {ENTRIES + table_id}')))
+    weights_list = []
+    if weights is None:
+        weights_list = [1] * len(table_fields)
+    else:
+        weights_list = [float(w) if w != 'NaN' or not len(w) else 0 for w in weights.split(',')]
+    if len(weights_list) != len(table_fields):  # accounting for id
+        raise Exception('List of weights needs to be equal to the number of fields')
+    entries.sort(reverse=True, key=lambda e: average_criteria(
+        e, weights_list,
+        table_fields,
+        max_entries, min_entries)
+                 )
+    start = PAGE_SIZE * (int(page) - 1)
+    end = min(len(entries), start + 25)
+    total_length = len(entries)
+    if start >= len(entries) and len(entries):
+        entries = []
+    else:
+        entries = entries[start:end]
     for field in table_fields:
         for i in range(len(entries)):
             entries[i][field['name']] = entries[i].pop(FIELD + str(field['id']))
-    if criteria is not None:
-        max_entries = {}
-        min_entries = {}
-        field_info = {}
-        for field in table_fields:
-            field_info[field['name']] = field
-            max_entries[field['name']] = get_single_result(
-                db.execute(f'SELECT MAX({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}'))
-            min_entries[field['name']] = get_single_result(
-                db.execute(f'SELECT MIN({get_field_id(table, field["name"])}) FROM {ENTRIES + table_id}'))
-        weights_list = []
-        criteria_list = criteria.split(',')
-        if weights is None:
-            weights_list = [1] * len(criteria_list)
-        else:
-            weights_list = [float(w) if w != 'NaN' else 0 for w in weights.split(',')]
-        if len(weights_list) != len(criteria_list):
-            raise Exception('List of weights needs to be equal in length to list of selected criteria')
-        entries.sort(reverse=True, key=lambda e: average_criteria(
-            e, criteria_list, weights_list,
-            field_info,
-            max_entries, min_entries)
-                     )
-    start = PAGE_SIZE * (int(page) - 1)
-    if start >= len(entries):
-        return jsonify([])
-    end = min(len(entries), start + 25)
-    return jsonify(entries[start:end])
+    return jsonify({
+        "total": total_length,
+        "pageCount": math.ceil(total_length / PAGE_SIZE),
+        "entries": entries
+    })
 
 
-@bp.route('/<string:table>/entry-count')
-def entry_count(table):
-    return jsonify(get_single_result(get_db().execute(f'SELECT COUNT(*) FROM {ENTRIES + get_table_id(table)}')))
-
-
-@bp.route('/<string:table>/page-count')
-def page_count(table):
-    return jsonify(math.ceil(
-        get_single_result(get_db().execute(f'SELECT COUNT(*) FROM {ENTRIES + get_table_id(table)}')) / PAGE_SIZE))
-
-
-@bp.route('/<string:table>/info')
+@bp.route('/table/<string:table>/info')
 def get_table_info(table):
-    return {**{'name': table}, **get_db().execute(f'SELECT * FROM {INFO + get_table_id(table)}').fetchone()}
+    fields = get_db().execute(f'SELECT * FROM {FIELDS + get_table_id(table)}').fetchall()
+    entry_count = get_single_result(get_db().execute(f'SELECT COUNT(*) FROM {ENTRIES + get_table_id(table)}'))
+    return {
+        **{'name': table}, **get_db().execute(f'SELECT * FROM {INFO + get_table_id(table)}').fetchone(),
+        "fields": fields,
+        "entryCount": entry_count
+    }
 
 
 @bp.route('/tables')
@@ -242,12 +243,12 @@ def get_table_list():
     return jsonify([get_table_info(e['name']) for e in db.execute(f'SELECT name FROM {TABLE_LIST}').fetchall()])
 
 
-@bp.route('/<string:table>/exists')
+@bp.route('/table/<string:table>/exists')
 def exists(table):
     return str(data_table_exists(table))
 
 
-@bp.route('/create', methods=('POST',))
+@bp.route('/table/create', methods=('POST',))
 def create_table():
     table = request.headers['tableName']
     view_name = request.headers.get('viewName')
@@ -259,14 +260,15 @@ def create_table():
         db.execute(f'INSERT INTO {TABLE_LIST} (name) VALUES (?)', (table,))
         table_id = get_table_id(table)
         db.execute(CREATE_DATA_TABLE_INFO.format(table_name=INFO + table_id))
-        db.execute(f'INSERT INTO {INFO + table_id} (name, description) VALUES (?, ?)', (view_name, description))
+        db.execute(f'INSERT INTO {INFO + table_id} (name, viewName, description) VALUES (?, ?, ?)',
+                   (table, view_name, description))
         db.execute(CREATE_DATA_TABLE_ENTRIES.format(table_name=ENTRIES + table_id))
         db.execute(CREATE_DATA_TABLE_FIELDS.format(table_name=FIELDS + table_id))
         db.commit()
     return table + ' created'
 
 
-@bp.route('/<string:table>/edit', methods=('PUT',))
+@bp.route('/table/<string:table>/edit', methods=('PUT',))
 def update_table_info(table):
     description = request.headers.get('newDescription')
     view_name = request.headers.get('newViewName')
@@ -279,7 +281,7 @@ def update_table_info(table):
     return table + ' edited'
 
 
-@bp.route('/<string:table>/delete', methods=('DELETE',))
+@bp.route('/table/<string:table>/delete', methods=('DELETE',))
 def delete_table(table):
     db = get_db()
     table_id = get_table_id(table)
@@ -291,12 +293,7 @@ def delete_table(table):
     return table + ' deleted'
 
 
-@bp.route('/<string:table>/fields')
-def fields(table):
-    return jsonify(get_db().execute(f'SELECT * FROM {FIELDS + get_table_id(table)}').fetchall())
-
-
-@bp.route('/<string:table>/add-field', methods=('POST',))
+@bp.route('/table/<string:table>/add-field', methods=('POST',))
 def add_field(table):
     name = request.headers['fieldName']
     description = request.headers.get('fieldDescription')
@@ -322,7 +319,7 @@ def add_field(table):
     return 'Field added'
 
 
-@bp.route('/<string:table>/<string:field>/edit', methods=('PUT',))
+@bp.route('/table/<string:table>/<string:field>/edit', methods=('PUT',))
 def edit_field(table, field):
     new_name = request.headers.get('newFieldName')
     new_description = request.headers.get('newFieldDescription')
@@ -342,7 +339,7 @@ def edit_field(table, field):
     return 'Field edited'
 
 
-@bp.route('/<string:table>/<string:field>/delete', methods=('DELETE',))
+@bp.route('/table/<string:table>/<string:field>/delete', methods=('DELETE',))
 def delete_field(table, field):
     db = get_db()
     # db.execute('ALTER TABLE {entries_table} DROP COLUMN {field_id}'.format(
@@ -373,21 +370,22 @@ def delete_field(table, field):
     return 'Field deleted'
 
 
-def average_criteria(e, criteria, weights, field_info, max_entries, min_entries):
+def average_criteria(e, weights, field_info, max_entries, min_entries):
     total = 0
-    for key, value in e.items():
-        try:
-            index = criteria.index(key)
-            if key != 'id' and bool(field_info[key]['isData']):
-                weight = weights[index] * (-1 if bool(field_info[key]['isAscending']) else 1)
+    i = 0
+    for field in field_info:
+        if field['name'] != 'id' and bool(field['isData']):
+            if weights[i] != 0:
+                weight = weights[i] * (-1 if bool(field['isAscending']) else 1)
+                value = e[FIELD + str(field['id'])]
                 if value is not None:
-                    total += weight * (value - min_entries[key]) / (max_entries[key] - min_entries[key])
+                    total += weight * (value - min_entries[i]) / (max_entries[i] - min_entries[i])
                 else:
                     if weight < 0:
                         total += weight
                     total -= 0.0001  # to differentiate between the lowest value
-        except ValueError:
-            pass
+
+        i += 1
     return total
 
 
