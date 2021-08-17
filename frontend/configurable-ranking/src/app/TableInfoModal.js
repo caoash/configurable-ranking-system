@@ -5,9 +5,9 @@ const TableInfoModal = (props) => {
     for (let i in props.table.fields) {
         let field = props.table.fields[i];
         let fieldType = "";
-        if (field.isData == 1) {
+        if (field.isData === 1) {
             fieldType += "\n\tdata";
-            if (field.isAscending == 1) {
+            if (field.isAscending === 1) {
                 fieldType += " ascending";
             } else {
                 fieldType += " descending";

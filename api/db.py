@@ -1,11 +1,13 @@
+"""
+Stores convenience methods for working with database connections.
+"""
 import sqlite3
 
-import click
 from flask import current_app, g
-from flask.cli import with_appcontext
 
 
 def dict_factory(cursor, row):
+    """So that database entries are retrieved as dicts"""
     d = {}
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
@@ -13,6 +15,7 @@ def dict_factory(cursor, row):
 
 
 def get_db():
+    """Utility method for quickly fetching connection"""
     if 'db' not in g:
         g.db = sqlite3.connect(
             current_app.config['DATABASE'],
@@ -23,6 +26,7 @@ def get_db():
 
 
 def close_db(e=None):
+    """Close the database"""
     db = g.pop('db', None)
     if db is not None:
         db.commit()
@@ -31,6 +35,7 @@ def close_db(e=None):
 
 
 def init_app(app):
+    """Initialize the app with database config"""
     app.teardown_appcontext(close_db)
     app.teardown_request(close_db)
     return 'DONE'

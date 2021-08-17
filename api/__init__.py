@@ -1,3 +1,28 @@
+"""
+The backend of the configurable-ranking-system
+Uses Flask
+
+__init__.py initializes the app
+db.py stores basic database connection related methods
+tables.py stores all api routes for interacting with tables (details included there)
+
+General API model (not necessarily representative of the actual backend implementation):
+-   Data table
+    -   tableName
+    -   viewName
+    -   tableDescription
+    -   fields
+        -   fieldName
+        -   fieldDescription
+        -   isData
+        -   fieldIsAscending
+    -   entryCount
+    -   entries
+        -   values
+        -   ^for
+        -   ^each
+        -   ^field
+"""
 import os
 
 from flask import Flask
@@ -5,6 +30,10 @@ from flask_cors import CORS  # CORS stuff is development only
 
 
 def create_app(test_config=None):
+    """
+    :param test_config: Optionally used for test_config
+    :return: The Flask app
+    """
     app = Flask(__name__, instance_relative_config=True)
     app.debug = True
 
@@ -23,10 +52,6 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
-
-    @app.route('/api/status')
-    def status():
-        return 'API Online'
 
     from . import db
     db.init_app(app)

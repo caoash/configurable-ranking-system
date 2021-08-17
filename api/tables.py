@@ -1,3 +1,20 @@
+"""
+Routes all the different api requests related to the tables. Tables are user created and store data that can be ranked.
+
+Explanation of current model (model will change to use SqlAlchemy and remove redundant tables):
+-   User made tables and columns are stored in the database with ids and are referred to here as data tables
+-   The 'tables' table stores data table ids with their respective names
+-   Each data table is stored in 3 parts:
+-   fields_<id> stores a list of each user column and its associated data
+-   entries_<id> stores the actual entries
+-   info_<id> stores the info for the table
+-   All the column info and table info could be stored in single tables instead of the current system
+    (this will be changed)
+
+All the api methods return json. See https://flask.palletsprojects.com/en/2.0.x/api/#url-route-registrations for
+url routing in Flask which should make the function headers more self explanatory. All methods taking in a parameter
+table are expecting the table's name not id within the database.
+"""
 import json
 import math
 
@@ -9,12 +26,6 @@ except ImportError:
     from api.db import get_db
 
 bp = Blueprint('auth', __name__, url_prefix='/api')
-
-# Explanation of current model:
-# tables and fields CANNOT be named by the user because of sql injection stuff,
-# instead the tables are given numbers that are associated with the names through the 'tables' table
-# A data_table is a user made table that holds information to be sorted by criteria.
-# Data tables are stored in 3 parts: the entries, the fields, and the general table info
 
 # identifiers for database parts
 TABLE_LIST = 'tables'
@@ -77,6 +88,7 @@ MAX_ADDED_ENTRIES = 25
 
 @bp.route('/table/<string:table>/<int:entry_id>')
 def get_entry(table, entry_id):
+    """Fetch an entry from a data table by its id"""
     return (get_db()
             .execute(f'SELECT * FROM {ENTRIES + get_table_id(table)} WHERE id = ?', (entry_id,))
             .fetchone())
@@ -84,6 +96,8 @@ def get_entry(table, entry_id):
 
 @bp.route('/table/<string:table>/add-entries', methods=('POST',))
 def add_entries(table):
+    """Add an entry to a data table. Requires a header 'entryFields' that stores a json dict of field names and their
+    associated value. Cannot add more than MAX_ADDED_ENTRIES at a time."""
     entry_fields_list = json.loads(request.headers['entryFields'])  # dict of fields for entry
     if len(entry_fields_list) > MAX_ADDED_ENTRIES:
         raise Exception(f'Can\'t add more than {MAX_ADDED_ENTRIES} entries')
@@ -114,6 +128,8 @@ def add_entries(table):
 
 @bp.route('/table/<string:table>/<int:entry_id>/edit', methods=('PUT',))
 def edit_entry(table, entry_id):
+    """Edit an entry in a data table according to its id. Requires a header 'entryFields' that stores a json dict of
+    field names and their associated value."""
     entry_fields = json.loads(request.headers['entryFields'])  # dict of fields for entry
     db = get_db()
     table_id = get_table_id(table)
@@ -141,6 +157,7 @@ def edit_entry(table, entry_id):
 
 @bp.route('/table/<string:table>/<int:entry_id>/delete', methods=('DELETE',))
 def delete_entry(table, entry_id):
+    """Delete an entry from a data table by its id."""
     get_db().execute(f'DELETE FROM {ENTRIES + get_table_id(table)} where id=?', (entry_id,))
     get_db().commit()
     return 'Entry deleted'
@@ -148,8 +165,26 @@ def delete_entry(table, entry_id):
 
 @bp.route('/table/<string:table>/entries')
 def get_entries(table):
-    weights = request.args.get('fieldWeights')  # weights in order of the field ids
-    page = request.args.get('page')  # page starts at 1
+    """Retrieve entries from a data table ranked according to data fields.
+    Returns a dict:
+        entries - list of entries
+        total - number of entries (according to filter)
+        pageCount - number of pages (according to filter)
+    Notes:
+    -   Ranking entries happens by normalizing all data fields to be between 0 and 1 and then adding the fields
+        together. Fields have a default sorting direction (by multiplying the weight by -1).
+        Empty fields (None) are penalized as the minimum value).
+    Query parameters:
+    -   Include 'fieldWeights' to weight the different field ids. fieldWeights should include weights
+        for all fields, even those with isData false. Weights are in order of the field ids.
+    -   Include 'page' for pagination. A page has PAGE_SIZE entries. Pages start at 1.
+    -   Include 'filter' to filter the entries. filter is a json object: each property (optional) is a field id and its
+        associated filter. If the field isData then a min and max property can be specified as the filter. If not isData
+        then a list of substrings can be specified where an entry is included if the field matches any of the substrings
+        included.
+    """
+    weights = request.args.get('fieldWeights')
+    page = request.args.get('page')
     filters_json = request.args.get('filter')  # expects a json object of each field id and its associated filter,
     # if isData is true then it expects a min and max value, otherwise a list of substrings to check for
     if page is None:
@@ -204,7 +239,7 @@ def get_entries(table):
         weights_list = [float(w) if w != 'NaN' or not len(w) else 0 for w in weights.split(',')]
     if len(weights_list) != len(table_fields):  # accounting for id
         raise Exception('List of weights needs to be equal to the number of fields')
-    entries.sort(reverse=True, key=lambda e: average_criteria(
+    entries.sort(reverse=True, key=lambda e: criteria_value(
         e, weights_list,
         table_fields,
         max_entries, min_entries)
@@ -228,6 +263,8 @@ def get_entries(table):
 
 @bp.route('/table/<string:table>/info')
 def get_table_info(table):
+    """Returns the table info of a data table. This includes all properties of the actual table info, including a
+    list of fields, and an entry count. Look at the create_table method for details on actual table info."""
     fields = get_db().execute(f'SELECT * FROM {FIELDS + get_table_id(table)}').fetchall()
     entry_count = get_single_result(get_db().execute(f'SELECT COUNT(*) FROM {ENTRIES + get_table_id(table)}'))
     return {
@@ -239,17 +276,25 @@ def get_table_info(table):
 
 @bp.route('/tables')
 def get_table_list():
+    """Get a list of all data tables. Uses get_table_info"""
     db = get_db()
     return jsonify([get_table_info(e['name']) for e in db.execute(f'SELECT name FROM {TABLE_LIST}').fetchall()])
 
 
 @bp.route('/table/<string:table>/exists')
 def exists(table):
+    """Returns whether a table name matches any data table"""
     return str(data_table_exists(table))
 
 
 @bp.route('/table/create', methods=('POST',))
 def create_table():
+    """Create a data table
+    Request headers:
+    -   Requires 'tableName' which must be unique
+    -   Optional 'viewName' will be shown to users, not unique
+    -   Optional 'tableDescription' description for table
+    """
     table = request.headers['tableName']
     view_name = request.headers.get('viewName')
     description = request.headers.get('tableDescription')
@@ -270,6 +315,11 @@ def create_table():
 
 @bp.route('/table/<string:table>/edit', methods=('PUT',))
 def update_table_info(table):
+    """Update a data table's info
+    Request headers:
+    -   Optional 'newDescription' see create_table for usage
+    -   Optional 'newViewName' see create_table for usage
+    """
     description = request.headers.get('newDescription')
     view_name = request.headers.get('newViewName')
     db = get_db()
@@ -283,6 +333,7 @@ def update_table_info(table):
 
 @bp.route('/table/<string:table>/delete', methods=('DELETE',))
 def delete_table(table):
+    """Delete a table"""
     db = get_db()
     table_id = get_table_id(table)
     db.execute(f'DELETE FROM {TABLE_LIST} WHERE id=?', (table_id,))
@@ -295,11 +346,19 @@ def delete_table(table):
 
 @bp.route('/table/<string:table>/add-field', methods=('POST',))
 def add_field(table):
+    """Add a field to a data table
+    Request headers:
+    -   Required 'fieldName' name of the field (must be unique within the data table)
+    -   Optional 'fieldDescription' description of the field
+    -   Required 'isData' specifies whether the field is just entry info or is a number meant to be used as criteria.
+        Pass in 'true' to set isData to 'true' (no quotations).
+        isData true means that the field expects numbers while false stores the field as a string.
+    -   Required 'fieldIsAscending' specifies the default sort direction of the field. 'true' means that
+        small values are more favorable.
+    """
     name = request.headers['fieldName']
     description = request.headers.get('fieldDescription')
-    # whether the field is data for calculations or info (like college name)
     is_data = int(request.headers['fieldIsData'].lower() == 'true')
-    # whether lower values are better
     is_ascending = int(request.headers['fieldIsAscending'].lower() == 'true')
     if field_exists(table, name):
         raise Exception(FIELD_EXISTS)
@@ -321,6 +380,12 @@ def add_field(table):
 
 @bp.route('/table/<string:table>/<string:field>/edit', methods=('PUT',))
 def edit_field(table, field):
+    """Edit an existing field of a data table
+    Request headers (all optional see add_field for descriptions):
+    -   'newFieldName' analogous to 'fieldName'
+    -   'newFieldDescription' analogous to 'fieldDescription'
+    -   'newFieldIsAscending' analogous to 'fieldIsAscending'
+    """
     new_name = request.headers.get('newFieldName')
     new_description = request.headers.get('newFieldDescription')
     is_ascending = int(request.headers.get('newFieldIsAscending').lower() == 'true')
@@ -341,6 +406,7 @@ def edit_field(table, field):
 
 @bp.route('/table/<string:table>/<string:field>/delete', methods=('DELETE',))
 def delete_field(table, field):
+    """Delete a field of a data table."""
     db = get_db()
     # db.execute('ALTER TABLE {entries_table} DROP COLUMN {field_id}'.format(
     #     entries_table=ENTRIES + get_table_id(table),
@@ -370,7 +436,9 @@ def delete_field(table, field):
     return 'Field deleted'
 
 
-def average_criteria(e, weights, field_info, max_entries, min_entries):
+def criteria_value(e, weights, field_info, max_entries, min_entries):
+    """Get the value of an entry according to criteria criteria. Entries are then sorted by this value. Higher is 
+    better. """
     total = 0
     i = 0
     for field in field_info:
@@ -390,6 +458,7 @@ def average_criteria(e, weights, field_info, max_entries, min_entries):
 
 
 def data_table_exists(table):
+    """Convenience method for whether a data table exists. Creates the 'tables' table if it doesn't exist."""
     db = get_db()
     if table_exists(TABLE_LIST):
         return db.execute(f'SELECT name FROM {TABLE_LIST} WHERE name=?', (table,)).fetchone() is not None
@@ -400,20 +469,24 @@ def data_table_exists(table):
 
 
 def table_exists(table):
+    """Convenience method for whether a table exists."""
     db = get_db()
     return db.execute('SELECT name FROM sqlite_master WHERE type="table" AND name=?', (table,)).fetchone() is not None
 
 
 def get_field_names(table):
+    """Get the names of fields of a data table"""
     return [field['name'] for field in get_db().execute(f'SELECT name FROM {FIELDS + get_table_id(table)}').fetchall()]
 
 
 def field_exists(table, field_name):
+    """Returns whether a field of a data table exists"""
     return get_db().execute(f'SELECT name FROM {FIELDS + get_table_id(table)} WHERE name=?', (field_name,)) \
-               .fetchone() is not None
+        .fetchone() is not None
 
 
 def get_field_id(table, field_name):
+    """Returns the field id (column name in the entries database) from a field name in a data table"""
     db = get_db()
     result = db.execute(f'SELECT * FROM {FIELDS + get_table_id(table)} WHERE name=?', (field_name,)).fetchone()
     if result is None:
@@ -423,6 +496,7 @@ def get_field_id(table, field_name):
 
 
 def get_table_id(table):
+    """Returns the table id (table name in the database) of a data table"""
     db = get_db()
     result = db.execute(f'SELECT * FROM {TABLE_LIST} WHERE name=?', (table,)).fetchone()
     if result is None:
@@ -432,4 +506,5 @@ def get_table_id(table):
 
 
 def get_single_result(cursor):
+    """Get single results from certain database queries"""
     return list(cursor.fetchone().values())[0]

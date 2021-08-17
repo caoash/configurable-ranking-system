@@ -88,6 +88,7 @@ html, body {
 
 .table {
     margin-bottom: 1rem;
+	margin: auto;
     color: #212529;
     table-layout: auto !important;
 }
